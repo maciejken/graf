@@ -71,5 +71,5 @@ export const authCheckMap: Record<
   (auth: string) => Promise<boolean>
 > = {
   [AuthType.Basic]: (auth: string) => verifyBasicAuth(auth),
-  [AuthType.Bearer]: (auth: string) => Promise.resolve(!!auth),
+  [AuthType.Bearer]: (auth: string) => Promise.resolve(false),
 };
