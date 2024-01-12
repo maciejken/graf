@@ -4,8 +4,9 @@ import { getDatabase } from "./dbService.ts";
 const db = getDatabase();
 
 export interface Credentials {
-  salt?: string;
-  passwordHash?: string;
+  id: string;
+  salt: string;
+  passwordHash: string;
 }
 
 export enum AuthType {
@@ -20,11 +21,6 @@ function generateSalt(): string {
     .join("");
 }
 
-interface PasswordDigestData {
-  passwordHash: string;
-  salt: string;
-}
-
 async function digestSaltedText(text: string, salt: string): Promise<string> {
   const encoder = new TextEncoder();
   const hashBuffer: ArrayBuffer = await crypto.subtle.digest(
@@ -35,15 +31,22 @@ async function digestSaltedText(text: string, salt: string): Promise<string> {
   return hashArray.map((b: number) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export async function getPasswordDigestData(
+export async function generateCredentials(
   password: string
-): Promise<PasswordDigestData> {
+): Promise<Credentials> {
+  const id: string = crypto.randomUUID();
+  return {
+    id,
+    ...(await generatePasswordHash(password)),
+  };
+}
+
+export async function generatePasswordHash(
+  password: string
+): Promise<Omit<Credentials, "id">> {
   const salt: string = generateSalt();
   const passwordHash: string = await digestSaltedText(password, salt);
-  return {
-    passwordHash,
-    salt,
-  };
+  return { passwordHash, salt };
 }
 
 async function verifyBasicAuth(auth: string) {

@@ -8,9 +8,8 @@ import {
 import { Application, Company, Document, User } from "./types.ts";
 import { getDatabase } from "../services/dbService.ts";
 import {
-  AuthType,
-  Credentials,
-  getPasswordDigestData,
+  generateCredentials,
+  generatePasswordHash,
 } from "../services/authService.ts";
 
 const db = getDatabase();
@@ -181,19 +180,15 @@ const mutation = new GraphQLObjectType({
         { firstName, lastName, email, phone, password }
       ) {
         const userId = crypto.randomUUID();
-        const credentialsId = crypto.randomUUID();
-        await db.set(["credentials", credentialsId], {
-          id: credentialsId,
-          type: AuthType.Basic,
-          ...(await getPasswordDigestData(password)),
-        } as Credentials);
+        const credentials = await generateCredentials(password);
+        await db.set(["credentials", credentials.id], credentials);
         await db.set(["users", userId], {
           id: userId,
           firstName,
           lastName,
           email,
           phone,
-          credentialsId,
+          credentialsId: credentials.id,
         });
         return (await db.get(["users", userId])).value;
       },
@@ -206,19 +201,38 @@ const mutation = new GraphQLObjectType({
         lastName: { type: GraphQLString },
         email: { type: GraphQLString },
         phone: { type: GraphQLString },
+        password: { type: GraphQLString },
       },
-      async resolve(_parentValue, { id, firstName, lastName, email, phone }) {
+      async resolve(
+        _parentValue,
+        { id, firstName, lastName, email, phone, password }
+      ) {
         const user: User | null = (await db.get<User>(["users", id])).value;
-        const shouldUpdate = !!(firstName || lastName || email || phone);
-        if (user && shouldUpdate) {
-          await db.set(["users", id], {
-            id,
-            firstName: firstName || user.firstName,
-            lastName: lastName || user.lastName,
-            email: email || user.email,
-            phone: phone || user.phone,
-          });
+        const shouldUpdateUser =
+          !!user && !!(firstName || lastName || email || phone);
+        const shouldUpdateCredentials = !!(password && user?.credentialsId);
+        const updates = [];
+        if (shouldUpdateCredentials) {
+          updates.push(
+            db.set(["credentials", user.credentialsId], {
+              id: user.credentialsId,
+              ...(await generatePasswordHash(password)),
+            })
+          );
         }
+        if (shouldUpdateUser) {
+          updates.push(
+            db.set(["users", id], {
+              id,
+              firstName: firstName || user.firstName,
+              lastName: lastName || user.lastName,
+              email: email || user.email,
+              phone: phone || user.phone,
+              credentialsId: user.credentialsId,
+            })
+          );
+        }
+        await Promise.all(updates);
         return (await db.get(["users", id])).value;
       },
     },
@@ -227,8 +241,11 @@ const mutation = new GraphQLObjectType({
       args: {
         id: { type: new GraphQLNonNull(GraphQLString) },
       },
-      resolve(_parentValue, { id }) {
-        return db.delete(["users", id]);
+      resolve(_parentValue, { id, credentialsId }) {
+        return Promise.all([
+          db.delete(["users", id]),
+          db.delete(["credentials", credentialsId]),
+        ]);
       },
     },
   },
