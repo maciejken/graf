@@ -7,7 +7,7 @@ const app = express();
 
 app.use(
   "/graphql",
-  // verifyCredentials,
+  verifyCredentials,
   createHandler({
     schema,
   })
