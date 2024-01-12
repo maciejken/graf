@@ -6,7 +6,8 @@
       "desc": "run my server.ts file",
       "allow": ["read", "env", "net"],
       "env": {
-        "PORT": "4000"
+        "PORT": "4000",
+        "WHITELISTED_IPS": "127.0.0.1"
       },
       "unstable": true
     }
