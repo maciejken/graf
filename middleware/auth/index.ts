@@ -7,16 +7,16 @@ export function ensureAuthenticated(
   next: NextFunction
 ) {
   const isAuthenticated = whitelistedIps?.includes(req.ip);
+  console.debug("req.ip", req.ip);
+  console.debug("req.connection.remoteAddress", req.connection.remoteAddress);
+  console.debug("req.socket.remoteAddress", req.socket.remoteAddress);
+  console.debug(
+    "req.headers['x-forwarded-for']",
+    req.headers["x-forwarded-for"]
+  );
+  console.debug("req.ips", req.ips);
 
   if (isAuthenticated) {
-    console.log("req.ip", req.ip);
-    console.log("req.connection.remoteAddress", req.connection.remoteAddress);
-    console.log("req.socket.remoteAddress", req.socket.remoteAddress);
-    console.log(
-      "req.headers['x-forwarded-for']",
-      req.headers["x-forwarded-for"]
-    );
-    console.log("req.ips", req.ips);
     next();
   } else {
     next(new Error(`Unauthenticated: ${req.socket.remoteAddress}`));
