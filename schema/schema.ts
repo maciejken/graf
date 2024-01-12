@@ -6,8 +6,23 @@ import {
   GraphQLNonNull,
 } from "npm:graphql";
 import { Application, Company, Document, User } from "./types.ts";
+import { getDatabase } from "../services/dbService.ts";
+import {
+  AuthType,
+  Credentials,
+  getPasswordDigestData,
+} from "../services/authService.ts";
 
-const kv: Deno.Kv = await Deno.openKv();
+const db = getDatabase();
+
+// const CredentialsType: GraphQLObjectType = new GraphQLObjectType<Credentials>({
+//   name: "Credentials",
+//   fields: {
+//     id: { type: GraphQLString },
+//     passwordHash: { type: GraphQLString },
+//     salt: { type: GraphQLString },
+//   },
+// });
 
 const UserType: GraphQLObjectType = new GraphQLObjectType<User>({
   name: "User",
@@ -17,10 +32,17 @@ const UserType: GraphQLObjectType = new GraphQLObjectType<User>({
     lastName: { type: GraphQLString },
     email: { type: GraphQLString },
     phone: { type: GraphQLString },
+    // credentials: {
+    //   type: CredentialsType,
+    //   async resolve({ credentialsId }: User) {
+    //     return (await db.get<Credentials>(["credentials", credentialsId]))
+    //       .value;
+    //   },
+    // },
     documents: {
       type: new GraphQLList(DocumentType),
       async resolve({ id: userId }: User) {
-        const allDocuments = kv.list<Document>({ prefix: ["documents"] });
+        const allDocuments = db.list<Document>({ prefix: ["documents"] });
         const userDocuments = [];
         for await (const { value } of allDocuments) {
           if (value.userId === userId) {
@@ -40,7 +62,7 @@ const DocumentType: GraphQLObjectType = new GraphQLObjectType<Document>({
     user: {
       type: UserType,
       async resolve({ userId }: Document) {
-        return (await kv.get(["users", userId])).value;
+        return (await db.get(["users", userId])).value;
       },
     },
     content: { type: GraphQLString },
@@ -48,7 +70,7 @@ const DocumentType: GraphQLObjectType = new GraphQLObjectType<Document>({
     applications: {
       type: new GraphQLList(ApplicationType),
       async resolve({ id: documentId }: Document) {
-        const allApplications = kv.list<Application>({
+        const allApplications = db.list<Application>({
           prefix: ["applications"],
         });
         const docApplications = [];
@@ -84,13 +106,13 @@ const ApplicationType: GraphQLObjectType = new GraphQLObjectType<Application>({
     document: {
       type: DocumentType,
       async resolve({ documentId }: Application) {
-        return (await kv.get(["documents", documentId])).value;
+        return (await db.get(["documents", documentId])).value;
       },
     },
     company: {
       type: CompanyType,
       async resolve({ companyId }: Application) {
-        return (await kv.get(["companies", companyId])).value;
+        return (await db.get(["companies", companyId])).value;
       },
     },
     description: { type: GraphQLString },
@@ -104,13 +126,13 @@ const query = new GraphQLObjectType({
       type: UserType,
       args: { id: { type: GraphQLString } },
       async resolve(_parentValue, args) {
-        return (await kv.get(["users", args.id])).value;
+        return (await db.get(["users", args.id])).value;
       },
     },
     users: {
       type: new GraphQLList(UserType),
       async resolve() {
-        const allUsersList = kv.list<User>({ prefix: ["users"] });
+        const allUsersList = db.list<User>({ prefix: ["users"] });
         const users: User[] = [];
         for await (const { value } of allUsersList) {
           users.push(value);
@@ -122,21 +144,21 @@ const query = new GraphQLObjectType({
       type: CompanyType,
       args: { id: { type: GraphQLString } },
       async resolve(_parentValue, args) {
-        return (await kv.get(["companies", args.id])).value;
+        return (await db.get(["companies", args.id])).value;
       },
     },
     document: {
       type: DocumentType,
       args: { id: { type: GraphQLString } },
       async resolve(_parentValue, args) {
-        return (await kv.get(["documents", args.id])).value;
+        return (await db.get(["documents", args.id])).value;
       },
     },
     application: {
       type: ApplicationType,
       args: { id: { type: GraphQLString } },
       async resolve(_parentValue, args) {
-        return (await kv.get(["applications", args.id])).value;
+        return (await db.get(["applications", args.id])).value;
       },
     },
   },
@@ -151,18 +173,29 @@ const mutation = new GraphQLObjectType({
         firstName: { type: new GraphQLNonNull(GraphQLString) },
         lastName: { type: new GraphQLNonNull(GraphQLString) },
         email: { type: new GraphQLNonNull(GraphQLString) },
+        password: { type: new GraphQLNonNull(GraphQLString) },
         phone: { type: GraphQLString },
       },
-      async resolve(_parentValue, { firstName, lastName, email, phone }) {
-        const id = crypto.randomUUID();
-        await kv.set(["users", id], {
-          id,
+      async resolve(
+        _parentValue,
+        { firstName, lastName, email, phone, password }
+      ) {
+        const userId = crypto.randomUUID();
+        const credentialsId = crypto.randomUUID();
+        await db.set(["credentials", credentialsId], {
+          id: credentialsId,
+          type: AuthType.Basic,
+          ...(await getPasswordDigestData(password)),
+        } as Credentials);
+        await db.set(["users", userId], {
+          id: userId,
           firstName,
           lastName,
           email,
           phone,
+          credentialsId,
         });
-        return (await kv.get(["users", id])).value;
+        return (await db.get(["users", userId])).value;
       },
     },
     updateUser: {
@@ -175,10 +208,10 @@ const mutation = new GraphQLObjectType({
         phone: { type: GraphQLString },
       },
       async resolve(_parentValue, { id, firstName, lastName, email, phone }) {
-        const user: User | null = (await kv.get<User>(["users", id])).value;
+        const user: User | null = (await db.get<User>(["users", id])).value;
         const shouldUpdate = !!(firstName || lastName || email || phone);
         if (user && shouldUpdate) {
-          await kv.set(["users", id], {
+          await db.set(["users", id], {
             id,
             firstName: firstName || user.firstName,
             lastName: lastName || user.lastName,
@@ -186,7 +219,7 @@ const mutation = new GraphQLObjectType({
             phone: phone || user.phone,
           });
         }
-        return (await kv.get(["users", id])).value;
+        return (await db.get(["users", id])).value;
       },
     },
     deleteUser: {
@@ -195,7 +228,7 @@ const mutation = new GraphQLObjectType({
         id: { type: new GraphQLNonNull(GraphQLString) },
       },
       resolve(_parentValue, { id }) {
-        return kv.delete(["users", id]);
+        return db.delete(["users", id]);
       },
     },
   },

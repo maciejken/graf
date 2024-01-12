@@ -1,1 +1,2 @@
-export const whitelistedIps = Deno.env.get("WHITELISTED_IPS");
+export const publicRsaKey = Deno.env.get("RSA_PUBLIC_KEY");
+export const privateRsaKey = Deno.env.get("RSA_PRIVATE_KEY");

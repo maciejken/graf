@@ -4,6 +4,7 @@ export interface User {
   lastName: string;
   email: string;
   phone: string;
+  credentialsId: string;
 }
 
 enum ContentType {
