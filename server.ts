@@ -1,12 +1,19 @@
 import express from "npm:express@4";
 import { createHandler } from "npm:graphql-http/lib/use/express";
-import { schema } from "./schema/schema.ts";
+import { schema } from "./gql/schema.ts";
 import { verifyCredentials } from "./middleware/verifyCredentials.ts";
+import { createAuthenticator, createUser } from "./controllers/register.ts";
 
 const app = express();
 
+app.use(express.json());
+
+app.post("/register/user", createUser);
+
+app.post("/register/authenticator", createAuthenticator);
+
 app.use(
-  "/graphql",
+  "/graf",
   verifyCredentials,
   createHandler({
     schema,

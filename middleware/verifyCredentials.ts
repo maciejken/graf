@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "npm:express@4";
-import { AuthType, authCheckMap } from "../services/authService.ts";
+import { authCheckMap } from "../services/auth/authService.ts";
+import { AuthType } from "../services/auth/types.ts";
 
 export async function verifyCredentials(
   req: Request,

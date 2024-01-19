@@ -1,22 +1,24 @@
 export interface User {
-  id: string;
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
-  credentialsId: string;
 }
 
-enum ContentType {
-  Memo = "memo",
-  Resume = "resume",
+export interface NewUser extends User {
+  password: string;
+}
+
+export interface UserData extends User {
+  id: string;
+  credentialsId: string;
 }
 
 export interface Document {
   id: string;
   userId: string;
   content: string;
-  contentType: ContentType;
+  contentType: string;
 }
 
 export interface Company {
