@@ -33,7 +33,7 @@ export async function getUserByEmail(email: string): Promise<UserData | null> {
   return user;
 }
 
-export async function createUser({
+export async function addUser({
   firstName,
   lastName,
   email,

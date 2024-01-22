@@ -3,6 +3,7 @@ export interface Credentials {
   salt: string;
   passwordHash: string;
   currentChallenge?: string;
+  authenticatorIds?: string[];
 }
 
 export enum AuthType {

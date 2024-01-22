@@ -1,23 +1,28 @@
 import { Request, Response, NextFunction } from "npm:express@4";
 import { authCheckMap } from "../services/auth/authService.ts";
 import { AuthType } from "../services/auth/types.ts";
+import { UserData } from "../types.ts";
 
 export async function verifyCredentials(
   req: Request,
-  _res: Response,
+  res: Response,
   next: NextFunction
 ) {
   try {
     const { authorization } = req.headers;
-    let isAuthenticated = false;
+    let authenticatedUser: UserData | null = null;
 
     if (authorization) {
       const [authType, authData] = authorization.split(" ");
       const verify = authCheckMap[authType as AuthType];
-      isAuthenticated = await verify(authData);
+      authenticatedUser = await verify(authData);
     }
 
-    next(isAuthenticated ? undefined : new Error("Unauthenticated"));
+    if (authenticatedUser) {
+      res.locals.userId = authenticatedUser.id;
+    }
+
+    next(authenticatedUser ? undefined : new Error("Unauthenticated"));
   } catch (_e: unknown) {
     next("Unexpected error");
   }
