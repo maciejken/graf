@@ -1,4 +1,3 @@
-import { u2fAppId, u2fVersion } from "../../config.ts";
 import {
   authenticatorsPrefix,
   credentialsPrefix,
@@ -65,18 +64,6 @@ export async function generatePasswordHash(
   const salt: string = generateRandomString();
   const passwordHash: string = await digestSaltedText(password, salt);
   return { passwordHash, salt };
-}
-
-export function generateU2FRegistrationRequest() {
-  if (!u2fAppId) {
-    throw new Error("Unable to generate U2F request: appId must be provided.");
-  }
-
-  return {
-    version: u2fVersion,
-    challenge: generateRandomString(),
-    appId: u2fAppId,
-  };
 }
 
 async function verifyBasicAuth(auth: string): Promise<UserData | null> {

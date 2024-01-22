@@ -3,6 +3,7 @@ import { PublicKeyCredentialCreationOptionsJSON } from "https://deno.land/x/simp
 import { getNewAuthenticatorOptions } from "../services/auth/authService.ts";
 import { addUser } from "../services/user/userService.ts";
 import { UserData } from "../types.ts";
+import { relyingPartyId, relyingPartyName } from "../config.ts";
 
 export async function createUser(req: Request, res: Response) {
   const { firstName, lastName, email, phone, password } = req.body;
@@ -19,8 +20,8 @@ export async function createUser(req: Request, res: Response) {
 export async function getRegistrationOptions(_req: Request, res: Response) {
   const options: PublicKeyCredentialCreationOptionsJSON | null =
     await getNewAuthenticatorOptions({
-      rpId: "localhost",
-      rpName: "Graf API",
+      rpId: relyingPartyId,
+      rpName: relyingPartyName,
       userId: res.locals.userId,
     });
   res.json({ options });
