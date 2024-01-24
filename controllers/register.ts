@@ -14,7 +14,13 @@ export async function createUser(req: Request, res: Response) {
     phone,
     password,
   });
-  res.json({ user });
+  res.json({
+    id: user?.id,
+    firstName: user?.firstName,
+    lastName: user?.lastName,
+    email: user?.email,
+    phone: user?.phone,
+  });
 }
 
 export async function getRegistrationOptions(_req: Request, res: Response) {
@@ -22,11 +28,11 @@ export async function getRegistrationOptions(_req: Request, res: Response) {
     await getNewAuthenticatorOptions({
       rpId: relyingPartyId,
       rpName: relyingPartyName,
-      userId: res.locals.userId,
+      userId: res.locals.user.id,
     });
-  res.json({ options });
+  res.json(options);
 }
 
-export function createAuthenticator(req: Request, res: Response) {
-  res.json({ post: "authenticator" });
+export function createAuthenticator(_req: Request, res: Response) {
+  res.json(res.locals.registrationResult);
 }

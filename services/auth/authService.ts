@@ -1,3 +1,4 @@
+import { relyingPartyId } from "../../config.ts";
 import {
   authenticatorsPrefix,
   credentialsPrefix,
@@ -8,10 +9,14 @@ import { getDatabase } from "../dbService.ts";
 import { getUserById } from "../user/userService.ts";
 import { AuthType, Authenticator, Credentials } from "./types.ts";
 import {
+  VerifiedRegistrationResponse,
   generateRegistrationOptions,
   verifyRegistrationResponse,
 } from "https://deno.land/x/simplewebauthn/deno/server.ts";
-import { PublicKeyCredentialCreationOptionsJSON } from "https://deno.land/x/simplewebauthn@v9.0.0/deno/types.ts";
+import {
+  PublicKeyCredentialCreationOptionsJSON,
+  RegistrationResponseJSON,
+} from "https://deno.land/x/simplewebauthn@v9.0.0/deno/types.ts";
 
 const db = getDatabase();
 
@@ -70,6 +75,7 @@ async function verifyBasicAuth(auth: string): Promise<UserData | null> {
   let authenticatedUser: UserData | null = null;
   const decodedAuth = atob(auth);
   const [email, password] = decodedAuth.split(":");
+  let challenge: string | undefined;
 
   const entries = db.list<UserData>({ prefix: [usersPrefix] });
   for await (const { value: user } of entries) {
@@ -82,11 +88,12 @@ async function verifyBasicAuth(auth: string): Promise<UserData | null> {
         const passwordHash = await digestSaltedText(password, credentials.salt);
         if (passwordHash === credentials.passwordHash) {
           authenticatedUser = user;
+          challenge = credentials.currentChallenge;
         }
       }
     }
   }
-  return authenticatedUser;
+  return authenticatedUser ? { ...authenticatedUser, challenge } : null;
 }
 
 export const authCheckMap: Record<
@@ -201,4 +208,17 @@ export async function getNewAuthenticatorOptions({
   }
 
   return options;
+}
+
+export function verifyRegistration(
+  response: RegistrationResponseJSON,
+  expectedChallenge: string,
+  origin: string
+): Promise<VerifiedRegistrationResponse> {
+  return verifyRegistrationResponse({
+    response,
+    expectedChallenge,
+    expectedOrigin: origin,
+    expectedRPID: relyingPartyId,
+  });
 }

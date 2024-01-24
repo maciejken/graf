@@ -12,6 +12,7 @@ export interface NewUser extends User {
 export interface UserData extends User {
   id: string;
   credentialsId: string;
+  challenge?: string | undefined;
 }
 
 export interface Document {

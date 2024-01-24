@@ -1,5 +1,6 @@
 import express from "npm:express@4";
 import { createHandler } from "npm:graphql-http/lib/use/express";
+import cors from "npm:cors@2";
 import { schema } from "./gql/schema.ts";
 import { verifyCredentials } from "./middleware/verifyCredentials.ts";
 import {
@@ -7,16 +8,24 @@ import {
   createUser,
   getRegistrationOptions,
 } from "./controllers/register.ts";
+import { verifyClientRegistration } from "./middleware/verifyClientRegistration.ts";
 
 const app = express();
 
 app.use(express.json());
 
+app.use(cors());
+
 app.post("/register", createUser);
 
-app.get("/register", verifyCredentials, getRegistrationOptions);
+app.get("/register/options", verifyCredentials, getRegistrationOptions);
 
-app.post("/register/authenticator", createAuthenticator);
+app.post(
+  "/register/authenticator",
+  verifyCredentials,
+  verifyClientRegistration,
+  createAuthenticator
+);
 
 app.use(
   "/graf",

@@ -19,7 +19,7 @@ export async function verifyCredentials(
     }
 
     if (authenticatedUser) {
-      res.locals.userId = authenticatedUser.id;
+      res.locals.user = authenticatedUser;
     }
 
     next(authenticatedUser ? undefined : new Error("Unauthenticated"));
