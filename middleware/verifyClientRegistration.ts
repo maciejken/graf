@@ -17,11 +17,7 @@ export async function verifyClientRegistration(
     error = new Error("Failed to verify client due to missing origin.");
   }
 
-  const result = await verifyRegistration(
-    req.body,
-    user.challenge,
-    req.headers.origin
-  );
+  const result = await verifyRegistration(req.body, user.challenge);
 
   if (!result.verified) {
     error = new Error("Failed to verify client.");

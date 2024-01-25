@@ -9,12 +9,13 @@ import {
   getRegistrationOptions,
 } from "./controllers/register.ts";
 import { verifyClientRegistration } from "./middleware/verifyClientRegistration.ts";
+import { expectedOrigin } from "./config.ts";
 
 const app = express();
 
 app.use(express.json());
 
-app.use(cors());
+app.use(cors({ origin: expectedOrigin }));
 
 app.post("/register", createUser);
 

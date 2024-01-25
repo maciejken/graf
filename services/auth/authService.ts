@@ -1,4 +1,4 @@
-import { relyingPartyId } from "../../config.ts";
+import { expectedOrigin, relyingPartyId } from "../../config.ts";
 import {
   authenticatorsPrefix,
   credentialsPrefix,
@@ -212,13 +212,12 @@ export async function getNewAuthenticatorOptions({
 
 export function verifyRegistration(
   response: RegistrationResponseJSON,
-  expectedChallenge: string,
-  origin: string
+  expectedChallenge: string
 ): Promise<VerifiedRegistrationResponse> {
   return verifyRegistrationResponse({
     response,
     expectedChallenge,
-    expectedOrigin: origin,
+    expectedOrigin,
     expectedRPID: relyingPartyId,
   });
 }
