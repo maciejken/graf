@@ -10,6 +10,7 @@ import {
 } from "./controllers/register.ts";
 import { verifyClientRegistration } from "./middleware/verifyClientRegistration.ts";
 import { expectedOrigin } from "./config.ts";
+import { getAuthOptions } from "./controllers/authenticate.ts";
 
 const app = express();
 
@@ -27,6 +28,8 @@ app.post(
   verifyClientRegistration,
   createAuthenticator
 );
+
+app.get("/authenticate", verifyCredentials, getAuthOptions);
 
 app.use(
   "/graf",

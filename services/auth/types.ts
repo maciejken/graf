@@ -1,3 +1,8 @@
+import {
+  AuthenticatorTransportFuture,
+  CredentialDeviceType,
+} from "https://deno.land/x/simplewebauthn@v9.0.0/deno/types.ts";
+
 export interface Credentials {
   id: string;
   salt: string;
@@ -12,13 +17,11 @@ export enum AuthType {
 }
 
 export interface Authenticator {
-  id: Uint8Array;
-  publicKey: Uint8Array;
+  credentialID: Uint8Array;
+  credentialPublicKey: Uint8Array;
+  credentialType: "public-key";
+  credentialDeviceType: CredentialDeviceType;
   counter: number;
-  deviceType: DeviceType;
-  isBackedUp: boolean;
-  transports?: AuthenticatorTransport[];
+  credentialBackedUp: boolean;
+  transports?: AuthenticatorTransportFuture[];
 }
-
-type DeviceType = "singleDevice" | "multiDevice";
-type AuthenticatorTransport = "usb" | "ble" | "nfc" | "internal";

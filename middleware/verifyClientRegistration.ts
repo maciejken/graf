@@ -19,11 +19,11 @@ export async function verifyClientRegistration(
 
   const result = await verifyRegistration(req.body, user.challenge);
 
-  if (!result.verified) {
+  if (!result.verified || !result.registrationInfo) {
     error = new Error("Failed to verify client.");
   }
 
-  res.locals.registrationResult = result;
+  res.locals.registrationInfo = result.registrationInfo;
 
   next(result.verified ? undefined : error);
 }

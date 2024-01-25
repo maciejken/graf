@@ -6,15 +6,17 @@ import {
 } from "../../constants.ts";
 import { UserData } from "../../types.ts";
 import { getDatabase } from "../dbService.ts";
-import { getUserById } from "../user/userService.ts";
 import { AuthType, Authenticator, Credentials } from "./types.ts";
 import {
   VerifiedRegistrationResponse,
+  generateAuthenticationOptions,
   generateRegistrationOptions,
+  verifyAuthenticationResponse,
   verifyRegistrationResponse,
-} from "https://deno.land/x/simplewebauthn/deno/server.ts";
+} from "https://deno.land/x/simplewebauthn@v9.0.0/deno/server.ts";
 import {
   PublicKeyCredentialCreationOptionsJSON,
+  PublicKeyCredentialRequestOptionsJSON,
   RegistrationResponseJSON,
 } from "https://deno.land/x/simplewebauthn@v9.0.0/deno/types.ts";
 
@@ -105,30 +107,23 @@ export const authCheckMap: Record<
 };
 
 export async function setAuthChallenge(
-  userId: string,
+  user: UserData,
   challenge: string
 ): Promise<boolean> {
-  const user: UserData | null = await getUserById(userId);
-  let result = false;
+  const credentials: Credentials | null = await getCredentials(
+    user.credentialsId
+  );
 
-  if (user) {
-    const credentials: Credentials | null = await getCredentials(
-      user.credentialsId
-    );
-
-    if (!credentials) {
-      throw new Error("Failed to set challenge: credentials not found.");
-    }
-
-    await db.set([credentialsPrefix, credentials.id], {
-      ...credentials,
-      currentChallenge: challenge,
-    });
-
-    result = true;
+  if (!credentials) {
+    throw new Error("Failed to set challenge: credentials not found.");
   }
 
-  return result;
+  await db.set([credentialsPrefix, credentials.id], {
+    ...credentials,
+    currentChallenge: challenge,
+  });
+
+  return !!challenge;
 }
 
 async function getAuthenticators(ids: string[]): Promise<Authenticator[]> {
@@ -147,15 +142,14 @@ async function getAuthenticators(ids: string[]): Promise<Authenticator[]> {
 }
 
 export async function getNewAuthenticatorOptions({
-  userId,
+  user,
   rpName,
   rpId,
 }: {
-  userId: string;
+  user: UserData;
   rpName: string;
   rpId: string;
 }): Promise<PublicKeyCredentialCreationOptionsJSON | null> {
-  const user: UserData | null = await getUserById(userId);
   let options: PublicKeyCredentialCreationOptionsJSON | null = null;
 
   if (user) {
@@ -184,7 +178,7 @@ export async function getNewAuthenticatorOptions({
       // Prevent users from re-registering existing authenticators
       excludeCredentials: authenticators.map(
         (authenticator: Authenticator) => ({
-          id: authenticator.id,
+          id: authenticator.credentialID,
           type: "public-key",
           // Optional
           transports: authenticator.transports,
@@ -200,7 +194,7 @@ export async function getNewAuthenticatorOptions({
       },
     });
 
-    const result: boolean = await setAuthChallenge(user.id, options.challenge);
+    const result: boolean = await setAuthChallenge(user, options.challenge);
 
     if (!result) {
       throw new Error("Failed to set challenge.");
@@ -220,4 +214,72 @@ export function verifyRegistration(
     expectedOrigin,
     expectedRPID: relyingPartyId,
   });
+}
+
+export async function createNewAuthenticator(
+  user: UserData,
+  {
+    credentialID,
+    credentialType,
+    credentialPublicKey,
+    credentialDeviceType,
+    counter,
+    credentialBackedUp,
+    transports,
+  }: Authenticator
+) {
+  const credentials: Credentials | null = await getCredentials(
+    user.credentialsId
+  );
+
+  if (!credentials) {
+    throw new Error(
+      "Failed to create new authenticator: user credentials not found."
+    );
+  }
+
+  const newAuthenticator: Authenticator = {
+    credentialID,
+    credentialType,
+    credentialPublicKey,
+    counter,
+    credentialBackedUp,
+    transports,
+    credentialDeviceType,
+  };
+
+  await db.set([authenticatorsPrefix, credentialID], newAuthenticator);
+
+  await db.set([credentialsPrefix, credentials.id], {
+    ...credentials,
+    authenticatorIds: [...(credentials.authenticatorIds || []), credentialID],
+  });
+
+  return newAuthenticator;
+}
+
+export async function getAuthenticationOptions(user: UserData) {
+  let options: PublicKeyCredentialRequestOptionsJSON | null = null;
+  const credentials: Credentials | null = await getCredentials(
+    user.credentialsId
+  );
+
+  if (credentials?.authenticatorIds) {
+    const authenticators: Authenticator[] = await getAuthenticators(
+      credentials.authenticatorIds
+    );
+    options = await generateAuthenticationOptions({
+      rpID: relyingPartyId,
+      allowCredentials: authenticators.map(({ credentialID, transports }) => ({
+        id: credentialID,
+        type: "public-key",
+        transports,
+      })),
+      userVerification: "preferred",
+    });
+
+    await setAuthChallenge(user, options.challenge);
+  }
+
+  return options;
 }
