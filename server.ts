@@ -7,10 +7,10 @@ import {
   createAuthenticator,
   createUser,
   getRegistrationOptions,
-} from "./controllers/register.ts";
+} from "./controllers/registration.ts";
 import { verifyClientRegistration } from "./middleware/verifyClientRegistration.ts";
 import { expectedOrigin } from "./config.ts";
-import { getAuthOptions } from "./controllers/authenticate.ts";
+import { getAuthOptions } from "./controllers/authentication.ts";
 
 const app = express();
 
@@ -18,18 +18,18 @@ app.use(express.json());
 
 app.use(cors({ origin: expectedOrigin }));
 
-app.post("/register", createUser);
+app.post("/registration", createUser);
 
-app.get("/register/options", verifyCredentials, getRegistrationOptions);
+app.get("/registration/options", verifyCredentials, getRegistrationOptions);
 
 app.post(
-  "/register/authenticator",
+  "/registration/authenticator",
   verifyCredentials,
   verifyClientRegistration,
   createAuthenticator
 );
 
-app.get("/authenticate", verifyCredentials, getAuthOptions);
+app.get("/authentication/options", verifyCredentials, getAuthOptions);
 
 app.use(
   "/graf",
