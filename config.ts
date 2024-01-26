@@ -1,9 +1,14 @@
+export const envName = Deno.env.get("ENV_NAME");
+export const host = Deno.env.get("HOST");
+export const port = Deno.env.get("PORT");
 export const relyingPartyId = Deno.env.get("RELYING_PARTY_ID");
 export const relyingPartyName = Deno.env.get("RELYING_PARTY_NAME");
 export const expectedOrigin = Deno.env.get("EXPECTED_ORIGIN");
 
 export function checkConfig() {
   const emptyValues: Array<{ key: string; value: string | undefined }> = [
+    "HOST",
+    "PORT",
     "RELYING_PARTY_ID",
     "RELYING_PARTY_NAME",
     "EXPECTED_ORIGIN",

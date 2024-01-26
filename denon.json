@@ -6,6 +6,8 @@
       "desc": "run my server.ts file",
       "allow": ["read", "env", "net"],
       "env": {
+        "ENV_NAME": "dev",
+        "HOST": "localhost",
         "PORT": "4000",
         "EXPECTED_ORIGIN": "http://localhost:8000",
         "RELYING_PARTY_ID": "localhost",

@@ -1,10 +1,9 @@
 import { Request, Response, NextFunction } from "npm:express@4";
 import {
   getAuthenticator,
-  getCredentials,
   verifyAuthentication,
 } from "../services/auth/authService.ts";
-import { Authenticator, Credentials } from "../services/auth/types.ts";
+import { Authenticator } from "../services/auth/types.ts";
 
 export async function verifyClientAuthentication(
   req: Request,
@@ -41,16 +40,6 @@ export async function verifyClientAuthentication(
       authenticator
     );
   }
-
-  console.log("req.body", req.body);
-  console.log("authenticator", authenticator);
-  console.log("authenticationInfo", result);
-
-  const credentials: Credentials | null = await getCredentials(
-    res.locals.user.credentialsId
-  );
-
-  console.log("authenticator ids:", credentials?.authenticatorIds);
 
   if (!result?.verified || !result?.authenticationInfo) {
     error = new Error("Failed to verify client.");

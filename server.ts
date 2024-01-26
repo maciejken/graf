@@ -9,7 +9,7 @@ import {
   getRegistrationOptions,
 } from "./controllers/registration.ts";
 import { verifyClientRegistration } from "./middleware/verifyClientRegistration.ts";
-import { checkConfig, expectedOrigin } from "./config.ts";
+import { checkConfig, envName, expectedOrigin, host, port } from "./config.ts";
 import { getAuthOptions, getAuthInfo } from "./controllers/authentication.ts";
 import { verifyClientAuthentication } from "./middleware/verifyClientAuthentication.ts";
 
@@ -49,6 +49,7 @@ app.use(
   })
 );
 
-app.listen(4000, () => {
-  console.log("Listening...");
+const prefix = envName === "dev" ? "http://" : "https://";
+app.listen(port, () => {
+  console.log(`Listening at ${prefix}${host}:${port}`);
 });
