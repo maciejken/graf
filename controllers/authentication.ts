@@ -7,3 +7,7 @@ export async function getAuthOptions(_req: Request, res: Response) {
     await getAuthenticationOptions(res.locals.user);
   res.json(options);
 }
+
+export function getAuthInfo(_req: Request, res: Response) {
+  res.json(res.locals.authenticationInfo);
+}

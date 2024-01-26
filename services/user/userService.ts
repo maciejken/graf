@@ -1,9 +1,15 @@
-import { credentialsPrefix, usersPrefix } from "../../constants.ts";
+import {
+  authenticatorsPrefix,
+  credentialsPrefix,
+  usersPrefix,
+} from "../../constants.ts";
 import { NewUser, UserData } from "../../types.ts";
 import {
   createCredentials,
   generatePasswordHash,
+  getCredentials,
 } from "../auth/authService.ts";
+import { Credentials } from "../auth/types.ts";
 import { getDatabase } from "../dbService.ts";
 
 const db = getDatabase();
@@ -96,10 +102,18 @@ export async function deleteUser(id: string): Promise<UserData | null> {
   const user: UserData | null = await getUserById(id);
 
   if (user) {
-    await Promise.all([
+    const credentials: Credentials | null = await getCredentials(
+      user.credentialsId
+    );
+    const authenticatorIds: string[] = credentials?.authenticatorIds || [];
+    const actions = [
       db.delete([usersPrefix, id]),
       db.delete([credentialsPrefix, user.credentialsId]),
-    ]);
+    ];
+    for (const authId of authenticatorIds) {
+      actions.push(db.delete([authenticatorsPrefix, authId]));
+    }
+    await Promise.all([actions]);
   }
 
   return user ? getUserById(id) : null;

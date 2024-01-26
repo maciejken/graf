@@ -1,3 +1,4 @@
+import { isoBase64URL } from "https://deno.land/x/simplewebauthn@v9.0.0/packages/server/src/helpers/index.ts";
 import { expectedOrigin, relyingPartyId } from "../../config.ts";
 import {
   authenticatorsPrefix,
@@ -8,6 +9,7 @@ import { UserData } from "../../types.ts";
 import { getDatabase } from "../dbService.ts";
 import { AuthType, Authenticator, Credentials } from "./types.ts";
 import {
+  VerifiedAuthenticationResponse,
   VerifiedRegistrationResponse,
   generateAuthenticationOptions,
   generateRegistrationOptions,
@@ -15,6 +17,7 @@ import {
   verifyRegistrationResponse,
 } from "https://deno.land/x/simplewebauthn@v9.0.0/deno/server.ts";
 import {
+  AuthenticationResponseJSON,
   PublicKeyCredentialCreationOptionsJSON,
   PublicKeyCredentialRequestOptionsJSON,
   RegistrationResponseJSON,
@@ -240,6 +243,7 @@ export async function createNewAuthenticator(
     );
   }
 
+  const authenticatorId: string = isoBase64URL.fromBuffer(credentialID);
   const newAuthenticator: Authenticator = {
     credentialID,
     credentialType,
@@ -250,11 +254,14 @@ export async function createNewAuthenticator(
     credentialDeviceType,
   };
 
-  await db.set([authenticatorsPrefix, credentialID], newAuthenticator);
+  await db.set([authenticatorsPrefix, authenticatorId], newAuthenticator);
 
   await db.set([credentialsPrefix, credentials.id], {
     ...credentials,
-    authenticatorIds: [...(credentials.authenticatorIds || []), credentialID],
+    authenticatorIds: [
+      ...(credentials.authenticatorIds || []),
+      authenticatorId,
+    ],
   });
 
   return newAuthenticator;
@@ -284,4 +291,18 @@ export async function getAuthenticationOptions(user: UserData) {
   }
 
   return options;
+}
+
+export function verifyAuthentication(
+  response: AuthenticationResponseJSON,
+  expectedChallenge: string,
+  authenticator: Authenticator
+): Promise<VerifiedAuthenticationResponse> {
+  return verifyAuthenticationResponse({
+    response,
+    expectedChallenge,
+    expectedOrigin: expectedOrigin!,
+    expectedRPID: relyingPartyId!,
+    authenticator,
+  });
 }
