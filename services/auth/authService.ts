@@ -145,10 +145,12 @@ export async function getNewAuthenticatorOptions({
   user,
   rpName,
   rpId,
+  platform,
 }: {
   user: UserData;
   rpName: string;
   rpId: string;
+  platform: boolean;
 }): Promise<PublicKeyCredentialCreationOptionsJSON | null> {
   let options: PublicKeyCredentialCreationOptionsJSON | null = null;
 
@@ -190,7 +192,7 @@ export async function getNewAuthenticatorOptions({
         residentKey: "preferred",
         userVerification: "preferred",
         // Optional
-        authenticatorAttachment: "platform",
+        authenticatorAttachment: platform ? "platform" : "cross-platform",
       },
     });
 
@@ -211,7 +213,7 @@ export function verifyRegistration(
   return verifyRegistrationResponse({
     response,
     expectedChallenge,
-    expectedOrigin,
+    expectedOrigin: expectedOrigin!,
     expectedRPID: relyingPartyId,
   });
 }

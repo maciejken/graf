@@ -7,7 +7,9 @@
       "allow": ["read", "env", "net"],
       "env": {
         "PORT": "4000",
-        "WHITELISTED_IPS": "127.0.0.1"
+        "EXPECTED_ORIGIN": "http://localhost:8000",
+        "RELYING_PARTY_ID": "localhost",
+        "RELYING_PARTY_NAME": "Graf"
       },
       "unstable": true
     }

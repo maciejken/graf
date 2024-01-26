@@ -27,13 +27,15 @@ export async function createUser(req: Request, res: Response) {
   });
 }
 
-export async function getRegistrationOptions(_req: Request, res: Response) {
+export async function getRegistrationOptions(req: Request, res: Response) {
   const user: UserData = res.locals.user;
+  const platform = req.query.platform === "true";
   const options: PublicKeyCredentialCreationOptionsJSON | null =
     await getNewAuthenticatorOptions({
-      rpId: relyingPartyId,
-      rpName: relyingPartyName,
+      rpId: relyingPartyId!,
+      rpName: relyingPartyName!,
       user,
+      platform,
     });
   res.json(options);
 }

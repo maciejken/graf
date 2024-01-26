@@ -9,10 +9,12 @@ import {
   getRegistrationOptions,
 } from "./controllers/registration.ts";
 import { verifyClientRegistration } from "./middleware/verifyClientRegistration.ts";
-import { expectedOrigin } from "./config.ts";
+import { checkConfig, expectedOrigin } from "./config.ts";
 import { getAuthOptions } from "./controllers/authentication.ts";
 
 const app = express();
+
+checkConfig();
 
 app.use(express.json());
 
