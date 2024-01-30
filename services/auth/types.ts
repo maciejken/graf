@@ -16,6 +16,12 @@ export enum AuthType {
   Bearer = "Bearer",
 }
 
+export enum AuthScope {
+  Registration = "registration",
+  Authentication = "authentication",
+  Generic = "generic",
+}
+
 export interface Authenticator {
   credentialID: Uint8Array;
   credentialPublicKey: Uint8Array;

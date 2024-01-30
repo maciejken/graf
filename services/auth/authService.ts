@@ -1,5 +1,12 @@
 import { isoBase64URL } from "https://deno.land/x/simplewebauthn@v9.0.0/packages/server/src/helpers/index.ts";
-import { expectedOrigin, relyingPartyId } from "../../config.ts";
+import {
+  expectedOrigin,
+  relyingPartyId,
+  privateKey,
+  registrationTokenExpiresIn,
+  authenticationTokenExpiresIn,
+  genericTokenExpiresIn,
+} from "../../config.ts";
 import {
   authenticatorsPrefix,
   credentialsPrefix,
@@ -7,7 +14,7 @@ import {
 } from "../../constants.ts";
 import { UserData } from "../../types.ts";
 import { getDatabase } from "../dbService.ts";
-import { AuthType, Authenticator, Credentials } from "./types.ts";
+import { AuthScope, Authenticator, Credentials } from "./types.ts";
 import {
   VerifiedAuthenticationResponse,
   VerifiedRegistrationResponse,
@@ -15,13 +22,16 @@ import {
   generateRegistrationOptions,
   verifyAuthenticationResponse,
   verifyRegistrationResponse,
-} from "https://deno.land/x/simplewebauthn@v9.0.0/deno/server.ts";
+} from "@simplewebauthn/server";
 import {
   AuthenticationResponseJSON,
   PublicKeyCredentialCreationOptionsJSON,
   PublicKeyCredentialRequestOptionsJSON,
   RegistrationResponseJSON,
-} from "https://deno.land/x/simplewebauthn@v9.0.0/deno/types.ts";
+} from "@simplewebauthn/types";
+import { sign, verify } from "jsonwebtoken";
+import { SignOptions, JwtPayload } from "jsonwebtoken";
+import { getUserById } from "../user/userService.ts";
 
 const db = getDatabase();
 
@@ -76,11 +86,10 @@ export async function generatePasswordHash(
   return { passwordHash, salt };
 }
 
-async function verifyBasicAuth(auth: string): Promise<UserData | null> {
+export async function verifyBasicAuth(auth: string): Promise<UserData | null> {
   let authenticatedUser: UserData | null = null;
   const decodedAuth = atob(auth);
   const [email, password] = decodedAuth.split(":");
-  let challenge: string | undefined;
 
   const entries = db.list<UserData>({ prefix: [usersPrefix] });
   for await (const { value: user } of entries) {
@@ -93,21 +102,12 @@ async function verifyBasicAuth(auth: string): Promise<UserData | null> {
         const passwordHash = await digestSaltedText(password, credentials.salt);
         if (passwordHash === credentials.passwordHash) {
           authenticatedUser = user;
-          challenge = credentials.currentChallenge;
         }
       }
     }
   }
-  return authenticatedUser ? { ...authenticatedUser, challenge } : null;
+  return authenticatedUser;
 }
-
-export const authCheckMap: Record<
-  AuthType,
-  (auth: string) => Promise<UserData | null>
-> = {
-  [AuthType.Basic]: (auth: string) => verifyBasicAuth(auth),
-  [AuthType.Bearer]: (auth: string) => Promise.resolve(null),
-};
 
 export async function setAuthChallenge(
   user: UserData,
@@ -305,4 +305,73 @@ export function verifyAuthentication(
     expectedRPID: relyingPartyId!,
     authenticator,
   });
+}
+
+export async function getRegistrationToken(userId: string) {
+  const options: SignOptions = {
+    expiresIn: registrationTokenExpiresIn,
+    subject: userId,
+  };
+  const user: UserData | null = await getUserById(userId);
+  let isNewUser = false;
+
+  if (user) {
+    const credentials: Credentials | null = await getCredentials(
+      user.credentialsId
+    );
+    isNewUser = !credentials?.authenticatorIds?.length;
+  }
+
+  if (!isNewUser) {
+    throw new Error("Not a new user.");
+  }
+
+  return sign({ scope: AuthScope.Registration }, privateKey, options);
+}
+
+export function verifyRegistrationToken(token: string): JwtPayload {
+  const payload: JwtPayload = verify(token, privateKey);
+  const isValid = [AuthScope.Generic, AuthScope.Registration].includes(
+    payload.scope
+  );
+  if (!isValid) {
+    throw new Error("Invalid token scope.");
+  }
+  return payload;
+}
+
+export function getAuthenticationToken(userId: string): string {
+  const options: SignOptions = {
+    expiresIn: authenticationTokenExpiresIn,
+    subject: userId,
+  };
+  return sign({ scope: AuthScope.Authentication }, privateKey, options);
+}
+
+export function verifyAuthenticationToken(token: string): JwtPayload {
+  const payload: JwtPayload = verify(token, privateKey);
+  const isValid = [AuthScope.Generic, AuthScope.Authentication].includes(
+    payload.scope
+  );
+  if (!isValid) {
+    throw new Error("Invalid token scope.");
+  }
+  return payload;
+}
+
+export function getGenericToken(userId: string): string {
+  const options: SignOptions = {
+    expiresIn: genericTokenExpiresIn,
+    subject: userId,
+  };
+  return sign({ scope: AuthScope.Generic }, privateKey, options);
+}
+
+export function verifyGenericToken(token: string): JwtPayload {
+  const payload: JwtPayload = verify(token, privateKey);
+  const isValid = payload.scope === AuthScope.Generic;
+  if (!isValid) {
+    throw new Error("Invalid token scope.");
+  }
+  return payload;
 }

@@ -1,0 +1,8 @@
+{
+  "imports": {
+    "jsonwebtoken": "npm:jsonwebtoken@9.0.2",
+    "@types/jsonwebtoken": "npm:@types/jsonwebtoken",
+    "@simplewebauthn/server": "https://deno.land/x/simplewebauthn@v9.0.0/deno/server.ts",
+    "@simplewebauthn/types": "https://deno.land/x/simplewebauthn@v9.0.0/deno/types.ts"
+  }
+}

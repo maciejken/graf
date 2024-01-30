@@ -1,9 +1,8 @@
 import { Request, Response, NextFunction } from "npm:express@4";
-import { authCheckMap } from "../services/auth/authService.ts";
-import { AuthType } from "../services/auth/types.ts";
 import { UserData } from "../types.ts";
+import { verifyBasicAuth } from "../services/auth/authService.ts";
 
-export async function verifyCredentials(
+export async function verifyBasic(
   req: Request,
   res: Response,
   next: NextFunction
@@ -13,9 +12,8 @@ export async function verifyCredentials(
     let authenticatedUser: UserData | null = null;
 
     if (authorization) {
-      const [authType, authData] = authorization.split(" ");
-      const verify = authCheckMap[authType as AuthType];
-      authenticatedUser = await verify(authData);
+      const [_authType, authData] = authorization.split(" ");
+      authenticatedUser = await verifyBasicAuth(authData);
     }
 
     if (authenticatedUser) {

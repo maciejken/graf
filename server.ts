@@ -2,16 +2,24 @@ import express from "npm:express@4";
 import { createHandler } from "npm:graphql-http/lib/use/express";
 import cors from "npm:cors@2";
 import { schema } from "./gql/schema.ts";
-import { verifyCredentials } from "./middleware/verifyCredentials.ts";
+import { verifyBasic } from "./middleware/verifyBasic.ts";
 import {
-  createAuthenticator,
   createUser,
+  getRegistrationInfo,
   getRegistrationOptions,
+  getRegistrationScopeToken,
 } from "./controllers/registration.ts";
 import { verifyClientRegistration } from "./middleware/verifyClientRegistration.ts";
 import { checkConfig, envName, expectedOrigin, host, port } from "./config.ts";
-import { getAuthOptions, getAuthInfo } from "./controllers/authentication.ts";
+import {
+  getAuthOptions,
+  getAuthInfo,
+  getAuthenticationScopeToken,
+} from "./controllers/authentication.ts";
 import { verifyClientAuthentication } from "./middleware/verifyClientAuthentication.ts";
+import { verifyRegistrationScopeToken } from "./middleware/verifyRegistrationScopeToken.ts";
+import { checkUsernameAvailable } from "./middleware/checkUsernameAvailable.ts";
+import { verifyAuthenticationScopeToken } from "./middleware/verifyAuthenticationScopeToken.ts";
 
 const app = express();
 
@@ -21,29 +29,41 @@ app.use(express.json());
 
 app.use(cors({ origin: expectedOrigin }));
 
-app.post("/registration", createUser);
+app.post("/registration", checkUsernameAvailable, createUser);
 
-app.get("/registration/options", verifyCredentials, getRegistrationOptions);
+app.get("/registration/token", verifyBasic, getRegistrationScopeToken);
 
-app.post(
-  "/registration/authenticator",
-  verifyCredentials,
-  verifyClientRegistration,
-  createAuthenticator
+app.get(
+  "/registration/options",
+  verifyRegistrationScopeToken,
+  getRegistrationOptions
 );
 
-app.get("/authentication/options", verifyCredentials, getAuthOptions);
+app.post(
+  "/registration/info",
+  verifyRegistrationScopeToken,
+  verifyClientRegistration,
+  getRegistrationInfo
+);
+
+app.get("/authentication/token", verifyBasic, getAuthenticationScopeToken);
+
+app.get(
+  "/authentication/options",
+  verifyAuthenticationScopeToken,
+  getAuthOptions
+);
 
 app.post(
   "/authentication/info",
-  verifyCredentials,
+  verifyAuthenticationScopeToken,
   verifyClientAuthentication,
   getAuthInfo
 );
 
 app.use(
   "/graf",
-  verifyCredentials,
+  verifyBasic,
   createHandler({
     schema,
   })
