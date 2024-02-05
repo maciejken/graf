@@ -5,6 +5,7 @@ import {
   getAuthenticationToken,
   getGenericToken,
 } from "../services/auth/authService.ts";
+import { VerifiedAuthenticationResponse } from "@simplewebauthn/server";
 
 export async function getAuthOptions(_req: Request, res: Response) {
   const options: PublicKeyCredentialRequestOptionsJSON | null =
@@ -13,23 +14,23 @@ export async function getAuthOptions(_req: Request, res: Response) {
 }
 
 export function getAuthInfo(_req: Request, res: Response) {
-  res.json(res.locals.authenticationInfo);
+  const authInfo: VerifiedAuthenticationResponse["authenticationInfo"] =
+    res.locals.authenticationInfo;
+
+  let token: string | undefined;
+
+  if (authInfo.userVerified) {
+    token = getGenericToken(res.locals.user.id);
+  }
+
+  res.json({ ...authInfo, token });
 }
 
 export function getAuthenticationScopeToken(_req: Request, res: Response) {
   try {
     const token = getAuthenticationToken(res.locals.user.id);
     res.json({ token });
-  } catch (e) {
+  } catch (_e) {
     console.error("Failed to get authentication scope token.");
-  }
-}
-
-export function getGenericScopeToken(_req: Request, res: Response) {
-  try {
-    const token = getGenericToken(res.locals.user.id);
-    res.json(token);
-  } catch (e) {
-    console.error("Failed to get generic scope token.");
   }
 }
