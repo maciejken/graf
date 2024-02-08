@@ -351,13 +351,11 @@ export async function getAuthenticationToken(userId: string): Promise<string> {
     subject: userId,
   };
   const privateKey = await getPrivateKey();
-  console.log('private key sign:', privateKey);
   return jwt.sign({ scope: AuthScope.Authentication }, privateKey, options);
 }
 
 export async function verifyAuthenticationToken(token: string): JwtPayload {
   const privateKey = await getPrivateKey();
-  console.log('private key verify:', privateKey);
   const payload: JwtPayload = jwt.verify(token, privateKey);
   const isValid = [AuthScope.Generic, AuthScope.Authentication].includes(
     payload.scope
