@@ -31,7 +31,7 @@ import {
 import { sign, verify } from "jsonwebtoken";
 import { SignOptions, JwtPayload } from "jsonwebtoken";
 import { getUserById } from "../user/userService.ts";
-import { getPrivateKey, getPublicKey } from "../secretService.ts";
+import { getPrivateKey } from "../secretService.ts";
 
 const db = getDatabase();
 

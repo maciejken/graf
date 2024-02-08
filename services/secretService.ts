@@ -1,3 +1,5 @@
+import { isoBase64URL } from "isoBase64URL";
+
 const algorithm = {
   name: "RSA-OAEP",
   modulusLength: 4096, // RSA key size
@@ -11,12 +13,8 @@ const keyPair: CryptoKeyPair = await crypto.subtle.generateKey(
   ["encrypt", "decrypt"]
 );
 
-export async function getPublicKey(): Promise<ArrayBufferView> {
-  const buffer = await crypto.subtle.exportKey("spki", keyPair.publicKey);
-  return new Uint8Array(buffer);
-}
-
-export async function getPrivateKey(): Promise<ArrayBufferView> {
+export async function getPrivateKey() {
   const buffer = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
-  return new Uint8Array(buffer);
+  const bytes = new Uint8Array(buffer);
+  return `-----BEGIN PRIVATE KEY\n${isoBase64URL.fromBuffer(bytes)}\n-----END PRIVATE KEY-----\n`;
 }
