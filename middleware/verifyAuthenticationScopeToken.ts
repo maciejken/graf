@@ -19,7 +19,7 @@ export async function verifyAuthenticationScopeToken(
 
     if (authorization) {
       const [_authType, token] = authorization.split(" ");
-      const verifiedToken: JwtPayload = verifyAuthenticationToken(token);
+      const verifiedToken: JwtPayload = await verifyAuthenticationToken(token);
       authenticatedUser = await getUserById(verifiedToken.sub!);
     }
 

@@ -28,7 +28,7 @@ import {
   PublicKeyCredentialRequestOptionsJSON,
   RegistrationResponseJSON,
 } from "@simplewebauthn/types";
-import { sign, verify } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import { SignOptions, JwtPayload } from "jsonwebtoken";
 import { getUserById } from "../user/userService.ts";
 import { getPrivateKey } from "../secretService.ts";
@@ -328,14 +328,14 @@ export async function getRegistrationToken(userId: string) {
 
   const privateKey = await getPrivateKey();
 
-  return sign({ scope: AuthScope.Registration }, privateKey, options);
+  return jwt.sign({ scope: AuthScope.Registration }, privateKey, options);
 }
 
 export async function verifyRegistrationToken(
   token: string
 ): Promise<JwtPayload> {
   const privateKey = await getPrivateKey();
-  const payload: JwtPayload = verify(token, privateKey);
+  const payload: JwtPayload = jwt.verify(token, privateKey);
   const isValid = [AuthScope.Generic, AuthScope.Registration].includes(
     payload.scope
   );
@@ -351,12 +351,14 @@ export async function getAuthenticationToken(userId: string): Promise<string> {
     subject: userId,
   };
   const privateKey = await getPrivateKey();
-  return sign({ scope: AuthScope.Authentication }, privateKey, options);
+  console.log('private key sign:', privateKey);
+  return jwt.sign({ scope: AuthScope.Authentication }, privateKey, options);
 }
 
 export async function verifyAuthenticationToken(token: string): JwtPayload {
   const privateKey = await getPrivateKey();
-  const payload: JwtPayload = verify(token, privateKey);
+  console.log('private key verify:', privateKey);
+  const payload: JwtPayload = jwt.verify(token, privateKey);
   const isValid = [AuthScope.Generic, AuthScope.Authentication].includes(
     payload.scope
   );
@@ -372,12 +374,12 @@ export async function getGenericToken(userId: string): Promise<string> {
     subject: userId,
   };
   const privateKey = await getPrivateKey();
-  return sign({ scope: AuthScope.Generic }, privateKey, options);
+  return jwt.sign({ scope: AuthScope.Generic }, privateKey, options);
 }
 
 export async function verifyGenericToken(token: string): JwtPayload {
   const privateKey = await getPrivateKey();
-  const payload: JwtPayload = verify(token, privateKey);
+  const payload: JwtPayload = jwt.verify(token, privateKey);
   const isValid = payload.scope === AuthScope.Generic;
   if (!isValid) {
     throw new Error("Invalid token scope.");
