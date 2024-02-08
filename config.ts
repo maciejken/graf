@@ -4,8 +4,6 @@ export const port = Deno.env.get("PORT");
 export const relyingPartyId = Deno.env.get("RELYING_PARTY_ID");
 export const relyingPartyName = Deno.env.get("RELYING_PARTY_NAME");
 export const expectedOrigin = Deno.env.get("EXPECTED_ORIGIN");
-export const publicKey = Deno.env.get("PUBLIC_KEY");
-export const privateKey = Deno.env.get("PRIVATE_KEY");
 export const registrationTokenExpiresIn = Deno.env.get(
   "REGISTRATION_TOKEN_EXPIRES_IN"
 );
@@ -21,8 +19,6 @@ export function checkConfig() {
     "RELYING_PARTY_ID",
     "RELYING_PARTY_NAME",
     "EXPECTED_ORIGIN",
-    "PUBLIC_KEY",
-    "PRIVATE_KEY",
     "REGISTRATION_TOKEN_EXPIRES_IN",
     "AUTHENTICATION_TOKEN_EXPIRES_IN",
     "GENERIC_TOKEN_EXPIRES_IN",

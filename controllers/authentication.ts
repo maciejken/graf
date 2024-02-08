@@ -13,24 +13,27 @@ export async function getAuthOptions(_req: Request, res: Response) {
   res.json(options);
 }
 
-export function getAuthInfo(_req: Request, res: Response) {
+export async function getAuthInfo(_req: Request, res: Response) {
   const authInfo: VerifiedAuthenticationResponse["authenticationInfo"] =
     res.locals.authenticationInfo;
 
   let token: string | undefined;
 
   if (authInfo.userVerified) {
-    token = getGenericToken(res.locals.user.id);
+    token = await getGenericToken(res.locals.user.id);
   }
 
   res.json({ ...authInfo, token });
 }
 
-export function getAuthenticationScopeToken(_req: Request, res: Response) {
+export async function getAuthenticationScopeToken(
+  _req: Request,
+  res: Response
+) {
   try {
-    const token = getAuthenticationToken(res.locals.user.id);
+    const token = await getAuthenticationToken(res.locals.user.id);
     res.json({ token });
   } catch (_e) {
-    console.error("Failed to get authentication scope token.");
+    console.error("Failed to get authentication scope token.", _e);
   }
 }

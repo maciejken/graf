@@ -1,8 +1,7 @@
-import { isoBase64URL } from "https://deno.land/x/simplewebauthn@v9.0.0/packages/server/src/helpers/index.ts";
+import { isoBase64URL } from "isoBase64URL";
 import {
   expectedOrigin,
   relyingPartyId,
-  privateKey,
   registrationTokenExpiresIn,
   authenticationTokenExpiresIn,
   genericTokenExpiresIn,
@@ -32,6 +31,7 @@ import {
 import { sign, verify } from "jsonwebtoken";
 import { SignOptions, JwtPayload } from "jsonwebtoken";
 import { getUserById } from "../user/userService.ts";
+import { getPrivateKey, getPublicKey } from "../secretService.ts";
 
 const db = getDatabase();
 
@@ -326,10 +326,15 @@ export async function getRegistrationToken(userId: string) {
     throw new Error("Not a new user.");
   }
 
+  const privateKey = await getPrivateKey();
+
   return sign({ scope: AuthScope.Registration }, privateKey, options);
 }
 
-export function verifyRegistrationToken(token: string): JwtPayload {
+export async function verifyRegistrationToken(
+  token: string
+): Promise<JwtPayload> {
+  const privateKey = await getPrivateKey();
   const payload: JwtPayload = verify(token, privateKey);
   const isValid = [AuthScope.Generic, AuthScope.Registration].includes(
     payload.scope
@@ -340,15 +345,17 @@ export function verifyRegistrationToken(token: string): JwtPayload {
   return payload;
 }
 
-export function getAuthenticationToken(userId: string): string {
+export async function getAuthenticationToken(userId: string): Promise<string> {
   const options: SignOptions = {
     expiresIn: authenticationTokenExpiresIn,
     subject: userId,
   };
+  const privateKey = await getPrivateKey();
   return sign({ scope: AuthScope.Authentication }, privateKey, options);
 }
 
-export function verifyAuthenticationToken(token: string): JwtPayload {
+export async function verifyAuthenticationToken(token: string): JwtPayload {
+  const privateKey = await getPrivateKey();
   const payload: JwtPayload = verify(token, privateKey);
   const isValid = [AuthScope.Generic, AuthScope.Authentication].includes(
     payload.scope
@@ -359,15 +366,17 @@ export function verifyAuthenticationToken(token: string): JwtPayload {
   return payload;
 }
 
-export function getGenericToken(userId: string): string {
+export async function getGenericToken(userId: string): Promise<string> {
   const options: SignOptions = {
     expiresIn: genericTokenExpiresIn,
     subject: userId,
   };
+  const privateKey = await getPrivateKey();
   return sign({ scope: AuthScope.Generic }, privateKey, options);
 }
 
-export function verifyGenericToken(token: string): JwtPayload {
+export async function verifyGenericToken(token: string): JwtPayload {
+  const privateKey = await getPrivateKey();
   const payload: JwtPayload = verify(token, privateKey);
   const isValid = payload.scope === AuthScope.Generic;
   if (!isValid) {
