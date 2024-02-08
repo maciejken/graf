@@ -29,7 +29,7 @@ export async function createUser(req: Request, res: Response) {
       phone: user?.phone,
     });
   } catch (e) {
-    console.error("Failed to create new user.", e);
+    console.error("Failed to create new user.");
   }
 }
 
@@ -56,7 +56,7 @@ export async function getRegistrationOptions(req: Request, res: Response) {
       });
     res.json(options);
   } catch (e) {
-    console.error("Failed to get registration options.", e);
+    console.error("Failed to get registration options.");
   }
 }
 
@@ -68,6 +68,6 @@ export async function getRegistrationInfo(_req: Request, res: Response) {
     await createNewAuthenticator(user, registrationInfo);
     res.json(registrationInfo);
   } catch (e) {
-    console.error("Failed to get registration info.", e);
+    console.error("Failed to get registration info.");
   }
 }

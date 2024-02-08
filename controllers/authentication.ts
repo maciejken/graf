@@ -34,6 +34,6 @@ export async function getAuthenticationScopeToken(
     const token = await getAuthenticationToken(res.locals.user.id);
     res.json({ token });
   } catch (_e) {
-    console.error("Failed to get authentication scope token.", _e);
+    console.error("Failed to get authentication scope token.");
   }
 }
