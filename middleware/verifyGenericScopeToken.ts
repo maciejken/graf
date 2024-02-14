@@ -2,13 +2,13 @@ import { Request, Response, NextFunction } from "npm:express@4";
 import { UserData } from "../types.ts";
 import {
   getCredentials,
-  verifyRegistrationToken,
+  verifyGenericToken,
 } from "../services/auth/authService.ts";
 import { JwtPayload } from "npm:@types/jsonwebtoken";
 import { getUserById } from "../services/user/userService.ts";
 import { Credentials } from "../services/auth/types.ts";
 
-export async function verifyRegistrationScopeToken(
+export async function verifyGenericScopeToken(
   req: Request,
   res: Response,
   next: NextFunction
@@ -19,7 +19,7 @@ export async function verifyRegistrationScopeToken(
 
     if (authorization) {
       const [_authType, token] = authorization.split(" ");
-      const verifiedToken: JwtPayload = await verifyRegistrationToken(token);
+      const verifiedToken: JwtPayload = await verifyGenericToken(token);
       authenticatedUser = await getUserById(verifiedToken.sub!);
     }
 

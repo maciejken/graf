@@ -340,7 +340,7 @@ export async function verifyRegistrationToken(
     payload.scope
   );
   if (!isValid) {
-    throw new Error("Invalid token scope.");
+    throw new Error(`Invalid token scope: ${payload.scope}`);
   }
   return payload;
 }
@@ -361,7 +361,7 @@ export async function verifyAuthenticationToken(token: string): JwtPayload {
     payload.scope
   );
   if (!isValid) {
-    throw new Error("Invalid token scope.");
+    throw new Error(`Invalid token scope: ${payload.scope}`);
   }
   return payload;
 }
@@ -380,7 +380,7 @@ export async function verifyGenericToken(token: string): JwtPayload {
   const payload: JwtPayload = jwt.verify(token, privateKey);
   const isValid = payload.scope === AuthScope.Generic;
   if (!isValid) {
-    throw new Error("Invalid token scope.");
+    throw new Error(`Invalid token scope: ${payload.scope}`);
   }
   return payload;
 }

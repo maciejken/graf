@@ -20,6 +20,7 @@ import { verifyClientAuthentication } from "./middleware/verifyClientAuthenticat
 import { verifyRegistrationScopeToken } from "./middleware/verifyRegistrationScopeToken.ts";
 import { checkUsernameAvailable } from "./middleware/checkUsernameAvailable.ts";
 import { verifyAuthenticationScopeToken } from "./middleware/verifyAuthenticationScopeToken.ts";
+import { verifyGenericScopeToken } from "./middleware/verifyGenericScopeToken.ts";
 
 const app = express();
 
@@ -63,7 +64,7 @@ app.post(
 
 app.use(
   "/graf",
-  verifyBasic,
+  verifyGenericScopeToken,
   createHandler({
     schema,
   })

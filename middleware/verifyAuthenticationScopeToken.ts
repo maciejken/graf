@@ -35,6 +35,6 @@ export async function verifyAuthenticationScopeToken(
 
     next(authenticatedUser ? undefined : new Error("Unauthenticated"));
   } catch (_e: unknown) {
-    next(`Unexpected error ${_e}`);
+    next("Unexpected error");
   }
 }
