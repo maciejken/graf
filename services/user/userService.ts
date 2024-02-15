@@ -57,6 +57,7 @@ export async function addUser({
       email,
       phone,
       credentialsId: credentials.id,
+      groupIds: []
     });
   }
 
@@ -84,7 +85,7 @@ export async function updateUser(
 
   if (shouldUpdateUser) {
     updates.push(
-      db.set([usersPrefix], {
+      db.set([usersPrefix, id], {
         id,
         firstName: firstName || user.firstName,
         lastName: lastName || user.lastName,

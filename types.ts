@@ -1,25 +1,44 @@
 export interface User {
+  id: string;
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
+  groupIds: string[];
 }
 
-export interface NewUser extends User {
+export interface NewUser extends Omit<User, 'id'> {
   password: string;
 }
 
 export interface UserData extends User {
-  id: string;
   credentialsId: string;
   challenge?: string | undefined;
 }
 
-export interface Document {
+type DocumentType = 'counter' | 'note';
+
+interface Permission {
+  subjectId: string;
+  subjectType: 'user' | 'group',
+  accessLevel: AccessLevel;
+}
+
+export enum AccessLevel {
+  View,
+  Modify,
+  FullAccess,
+}
+
+export interface Document<T = number> {
   id: string;
+  type: DocumentType;
   userId: string;
-  content: string;
-  contentType: string;
+  permissions: Permission[];
+  title: string;
+  content: T;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Company {

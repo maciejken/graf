@@ -20,3 +20,55 @@ export async function getDocumentsByUserId(
   }
   return userDocuments;
 }
+
+export async function addDocument({
+  title,
+  content,
+  userId,
+  type,
+}: Omit<Document, 'id'>): Promise<Document | null> {
+  const id = crypto.randomUUID();
+  await db.set([documentsPrefix, id], {
+    id,
+    type,
+    title,
+    content,
+    userId,
+    permissions: [],
+    createdAt: new Date().toISOString(),
+  });
+
+  return getDocumentById(id);
+}
+
+
+
+export async function updateDocument(
+  id: string,
+  { type, title, content, permissions }: Document
+): Promise<Document | null> {
+  let doc: Document | null = await getDocumentById(id);
+
+  if (doc) {
+    await db.set([documentsPrefix, id], {
+      id,
+      type: type || doc.type,
+      title: title || doc.title,
+      content: content || doc.content,
+      userId: doc.userId, // creator
+      permissions: permissions || doc.permissions,
+      createdAt: doc.createdAt,
+      updatedAt: new Date().toISOString(),
+    });
+    
+    doc = await getDocumentById(id);
+  }
+
+  return doc;
+}
+
+export async function deleteDocument(id: string): Promise<Document | null> {
+  await db.delete([documentsPrefix, id]);
+
+  return getDocumentById(id);
+}
