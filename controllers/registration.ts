@@ -28,7 +28,7 @@ export async function createUser(req: Request, res: Response) {
       email: user?.email,
       phone: user?.phone,
     });
-  } catch (e) {
+  } catch (_e) {
     console.error("Failed to create new user.");
   }
 }
@@ -37,7 +37,7 @@ export async function getRegistrationScopeToken(req: Request, res: Response) {
   try {
     const token = await getRegistrationToken(req.user.id);
     res.json({ token });
-  } catch (e) {
+  } catch (_e) {
     console.error("Failed to get registration token.");
   }
 }
@@ -55,7 +55,7 @@ export async function getRegistrationOptions(req: Request, res: Response) {
         platform,
       });
     res.json(options);
-  } catch (e) {
+  } catch (_e) {
     console.error("Failed to get registration options.");
   }
 }
@@ -67,7 +67,7 @@ export async function getRegistrationInfo(req: Request, res: Response) {
   try {
     await createNewAuthenticator(user, registrationInfo);
     res.json(registrationInfo);
-  } catch (e) {
+  } catch (_e) {
     console.error("Failed to get registration info.");
   }
 }

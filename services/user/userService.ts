@@ -27,7 +27,8 @@ export async  function getGroupUsers(groupId: string, adminIds: string[]): Promi
   const entries = db.list<UserData>({ prefix: [usersPrefix] });
   const users: UserData[] = [];
   for await (const { value } of entries) {
-    const shouldIncludeUser = value.groupIds.includes(groupId) || adminIds.includes(value.id);
+    const shouldIncludeUser = value.groupIds?.includes(groupId) || adminIds.includes(value.id);
+    
     if (shouldIncludeUser) {
       users.push(value);
     }

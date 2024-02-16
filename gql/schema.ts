@@ -7,11 +7,7 @@ import {
   GraphQLNonNull,
 } from "npm:graphql";
 import { Context } from "../types.ts";
-import {
-getAllDocuments,
-  getDocumentById,
-  getUserDocuments,
-} from "../services/document/documentService.ts";
+import { getAllDocuments, getUserDocuments } from "../services/document/documentService.ts";
 import {
   deleteUser,
   getAllUsers,
@@ -48,7 +44,7 @@ const UserType: GraphQLObjectType = new GraphQLObjectType<UserData>({
   }),
 });
 
-const GroupType: GraphQLObjectType = new GraphQLObjectType<UserData>({
+const GroupType: GraphQLObjectType = new GraphQLObjectType<Group>({
   name: "Group",
   fields: () => ({
     id: { type: GraphQLString },
