@@ -1,5 +1,5 @@
 import { documentsPrefix } from "../../constants.ts";
-import { Document, Permissions } from "./types.ts";
+import { Document, Permission } from "./types.ts";
 import { getDatabase } from "../dbService.ts";
 import { NewDocument } from "./types.ts";
 
@@ -32,6 +32,17 @@ export async function getUserDocuments(userId: string, userGroupIds: string[]): 
     }
   }
   return userDocuments;
+}
+
+export async function getGroupDocuments(groupId: string): Promise<Document[]> {
+  const entries = db.list<Document>({ prefix: [documentsPrefix] });
+  const groupDocs = [];
+  for await (const { value } of entries) {
+    if (value.permissions[groupId]) {
+      groupDocs.push(value);
+    }
+  }
+  return groupDocs;
 }
 
 export async function addDocument({
@@ -78,7 +89,7 @@ export async function updateDocument(
   return doc;
 }
 
-export async function updateDocumentPermissions(id: string, permissions: Permissions): Promise<Document | null> {
+export async function updateDocumentPermissions(id: string, permissions: Permission[]): Promise<Document | null> {
   const doc: Document | null = await getDocumentById(id);
 
   if (doc) { 
@@ -86,7 +97,7 @@ export async function updateDocumentPermissions(id: string, permissions: Permiss
       ...doc,
       permissions: {
         ...doc.permissions,
-        ...permissions
+        ...Object.fromEntries(permissions.map(({ id, value }: Permission) => [id, value]))
       },
       updatedAt: new Date().toISOString(),
     });

@@ -15,8 +15,13 @@ export interface Document extends NewDocument {
 export type DocumentType = 'counter' | 'note';
 
 export interface Permissions {
-  [key: string]: AccessLevel;
+  [id: string]: AccessLevel;
 }
+
+export interface Permission {
+  id: string;
+  value: AccessLevel;
+};
 
 export enum AccessLevel {
   None,

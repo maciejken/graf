@@ -28,7 +28,7 @@ export async  function getGroupUsers(groupId: string, adminIds: string[]): Promi
   const users: UserData[] = [];
   for await (const { value } of entries) {
     const shouldIncludeUser = value.groupIds?.includes(groupId) || adminIds.includes(value.id);
-    
+
     if (shouldIncludeUser) {
       users.push(value);
     }
@@ -110,6 +110,19 @@ export async function updateUser(
     );
   }
   await Promise.all(updates);
+  return getUserById(id);
+}
+
+export async function updateUserGroups(id: string, groupIds: string[]) {
+  const user: UserData | null = await getUserById(id);
+
+  if (user) {
+    await db.set([usersPrefix, id], {
+      ...user,
+      groupIds,
+    });
+  }
+
   return getUserById(id);
 }
 

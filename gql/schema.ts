@@ -1,10 +1,11 @@
 import {
+  GraphQLInputObjectType,
   GraphQLObjectType,
-  GraphQLEnumType,
   GraphQLString,
   GraphQLSchema,
   GraphQLList,
   GraphQLNonNull,
+  GraphQLFloat,
 } from "npm:graphql";
 import { Context } from "../types.ts";
 import { getAllDocuments, getUserDocuments } from "../services/document/documentService.ts";
@@ -15,8 +16,8 @@ import {
   getUserById,
   updateUser,
 } from "../services/user/userService.ts";
-import { Document, NewDocument, AccessLevel } from "../services/document/types.ts";
-import { addDocument, updateDocument, updateDocumentPermissions, deleteDocument } from '../services/document/documentService.ts';
+import { Document, NewDocument, Permission } from "../services/document/types.ts";
+import { addDocument, getGroupDocuments, updateDocument, updateDocumentPermissions, deleteDocument } from '../services/document/documentService.ts';
 import { addGroup, getAllGroups, getUserGroups } from "../services/group/groupService.ts";
 import { Group } from "../services/group/types.ts";
 import { UserData } from "../services/user/types.ts";
@@ -56,6 +57,12 @@ const GroupType: GraphQLObjectType = new GraphQLObjectType<Group>({
         return getGroupUsers(id, adminIds);
       }
     },
+    documents: {
+      type: new GraphQLList(DocumentType),
+      resolve({ id }: Group) {
+        return getGroupDocuments(id);
+      }
+    }
   }),
 });
 
@@ -104,6 +111,14 @@ const query = new GraphQLObjectType({
       },
     },
   },
+});
+
+const PermissionType = new GraphQLInputObjectType({
+  name: "Permission",
+  fields: () => ({
+    id: { type: GraphQLString },
+    value: { type: GraphQLFloat }
+  })
 });
 
 const mutation = new GraphQLObjectType({
@@ -173,21 +188,10 @@ const mutation = new GraphQLObjectType({
       type: DocumentType,
       args: {
         id: { type: new GraphQLNonNull(GraphQLString) },
-        subjectId: { type: new GraphQLNonNull(GraphQLString) },
-        accessLevel: {
-          type: new GraphQLNonNull(new GraphQLEnumType({
-            name: 'AccessLevel',
-            values: {
-              NONE: { value: AccessLevel.None },
-              VIEW: { value: AccessLevel.View },
-              UPDATE: { value: AccessLevel.Update },
-              MANAGE: { value: AccessLevel.Manage },
-            }
-          }
-        ))},
+        permissions: { type: new GraphQLNonNull(new GraphQLList(PermissionType)) }
       },
-      resolve(_parentValue, { id, subjectId, accessLevel }) {
-        return updateDocumentPermissions(id, { [subjectId]: accessLevel });
+      resolve(_parentValue, { id, permissions }: { id: string; permissions: Permission[] }) {
+        return updateDocumentPermissions(id, permissions);
       }
     },
     deleteDocument: {
