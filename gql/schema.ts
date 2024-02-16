@@ -14,13 +14,15 @@ import {
   getAllUsers,
   getGroupUsers,
   getUserById,
+  removeUserFromGroup,
   updateUser,
 } from "../services/user/userService.ts";
 import { Document, NewDocument, Permission } from "../services/document/types.ts";
 import { addDocument, getGroupDocuments, updateDocument, updateDocumentPermissions, deleteDocument } from '../services/document/documentService.ts';
-import { addGroup, getAllGroups, getUserGroups } from "../services/group/groupService.ts";
+import { addGroup, deleteGroup, getAllGroups, getUserGroups, updateGroup } from "../services/group/groupService.ts";
 import { Group } from "../services/group/types.ts";
 import { UserData } from "../services/user/types.ts";
+import { addUserToGroup } from "../services/user/userService.ts";
 
 const UserType: GraphQLObjectType = new GraphQLObjectType<UserData>({
   name: "User",
@@ -138,6 +140,26 @@ const mutation = new GraphQLObjectType({
         return updateUser(args.id, args);
       },
     },
+    addUserToGroup: {
+      type: UserType,
+      args: {
+        userId: { type: new GraphQLNonNull(GraphQLString) },
+        groupId: { type: new GraphQLNonNull(GraphQLString) }
+      },
+      resolve(_parentValue, { userId, groupId }, context: Context) {
+        return addUserToGroup({ userId, groupId, currentUserId: context.user.id });
+      }
+    },
+    removeUserFromGroup: {
+      type: UserType,
+      args: {
+        userId: { type: new GraphQLNonNull(GraphQLString) },
+        groupId: { type: new GraphQLNonNull(GraphQLString) }
+      },
+      resolve(_parentValue, { userId, groupId }, context: Context) {
+        return removeUserFromGroup({ userId, groupId, currentUserId: context.user.id });
+      }
+    },
     deleteUser: {
       type: UserType,
       args: {
@@ -154,6 +176,26 @@ const mutation = new GraphQLObjectType({
       },
       resolve(_parentValue, { name }, context: Context) {
         return addGroup(name, context.user.id);
+      }
+    },
+    updateGroup: {
+      type: GroupType,
+      args: {
+        id: { type: new GraphQLNonNull(GraphQLString) },
+        name: { type: GraphQLString },
+        adminIds: { type: new GraphQLList(GraphQLString) }
+      },
+      resolve(_parentValue, args: Group, context: Context) {
+        return updateGroup(args.id, { ...args, currentUserId: context.user.id });
+      }
+    },
+    deleteGroup: {
+      type: GroupType,
+      args: {
+        id: { type: new GraphQLNonNull(GraphQLString) }
+      },
+      resolve(_parentValue, { id }: Group, context: Context) {
+        return deleteGroup(id, context.user.id);
       }
     },
     addDocument: {

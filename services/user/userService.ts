@@ -11,6 +11,7 @@ import {
 } from "../auth/authService.ts";
 import { Credentials } from "../auth/types.ts";
 import { getDatabase } from "../dbService.ts";
+import { getGroupById } from "../group/groupService.ts";
 
 const db = getDatabase();
 
@@ -113,17 +114,34 @@ export async function updateUser(
   return getUserById(id);
 }
 
-export async function updateUserGroups(id: string, groupIds: string[]) {
-  const user: UserData | null = await getUserById(id);
+export async function addUserToGroup({ currentUserId, groupId, userId }: { currentUserId: string, groupId: string, userId: string }) {
+  const [user, group] = await Promise.all([getUserById(userId), getGroupById(groupId)]);
 
-  if (user) {
-    await db.set([usersPrefix, id], {
+  const canAddUser = group?.adminIds.includes(currentUserId) && user && !user.groupIds.includes(groupId);
+
+  if (canAddUser) {
+    await db.set([usersPrefix, userId], {
       ...user,
-      groupIds,
+      groupIds: [...user.groupIds, groupId],
     });
   }
 
-  return getUserById(id);
+  return getUserById(userId);
+}
+
+export async function removeUserFromGroup({ currentUserId, groupId, userId }: { currentUserId: string, groupId: string, userId: string }) {
+  const [user, group] = await Promise.all([getUserById(userId), getGroupById(groupId)]);
+
+  const canRemoveUser = group?.adminIds.includes(currentUserId) && user && user.groupIds.includes(groupId);
+
+  if (canRemoveUser) {
+    await db.set([usersPrefix, userId], {
+      ...user,
+      groupIds: user.groupIds.filter((id: string) => id !== groupId),
+    });
+  }
+
+  return getUserById(userId);
 }
 
 export async function deleteUser(id: string): Promise<UserData | null> {

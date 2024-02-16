@@ -74,11 +74,11 @@ export async function addGroup(
 
 export async function updateGroup(
   id: string,
-  { name, adminIds }: Group
+  { name, adminIds, currentUserId }: Group & { currentUserId: string }
 ): Promise<Group | null> {
   let group: Group | null = await getGroupById(id);
 
-  if (group) {
+  if (group && group.adminIds.includes(currentUserId)) {
     await db.set([groupsPrefix, id], {
       id,
       name: name || group.name,
@@ -93,10 +93,10 @@ export async function updateGroup(
   return group;
 }
 
-export async function deleteGroup(id: string): Promise<Group | null> {
+export async function deleteGroup(id: string, currentUserId: string): Promise<Group | null> {
   const group: Group | null = await getGroupById(id);
 
-  if (group) {
+  if (group && group.adminIds.includes(currentUserId)) {
     await db.delete([groupsPrefix, id]);
   }
 
