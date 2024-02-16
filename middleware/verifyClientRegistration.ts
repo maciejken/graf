@@ -6,7 +6,7 @@ export async function verifyClientRegistration(
   res: Response,
   next: NextFunction
 ) {
-  const user = res.locals.user;
+  const user = req.user;
   let error: Error | null = null;
 
   if (!user.challenge) {

@@ -11,7 +11,7 @@ import {
   credentialsPrefix,
   usersPrefix,
 } from "../../constants.ts";
-import { UserData } from "../../types.ts";
+import { UserData } from "../user/types.ts";
 import { getDatabase } from "../dbService.ts";
 import { AuthScope, Authenticator, Credentials } from "./types.ts";
 import {

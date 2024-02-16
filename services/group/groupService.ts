@@ -13,6 +13,17 @@ export async function getAllGroups(): Promise<Group[]> {
   return groups;
 }
 
+export async function getGroups(ids: string[]): Promise<Group[]> {
+  const entries = db.list<Group>({ prefix: [groupsPrefix] });
+  const groups: Group[] = [];
+  for await (const { value } of entries) {
+    if (ids.includes(value.id)) {
+      groups.push(value);
+    }
+  }
+  return groups;
+}
+
 export async function getGroupById(id: string): Promise<Group | null> {
   return (await db.get<Group>([groupsPrefix, id])).value;
 }
@@ -27,6 +38,22 @@ export async function getGroupByName(name: string): Promise<Group | null> {
     }
   }
   return group;
+}
+
+export async function getGroupsByAdminId(id: string): Promise<Group[]> {
+  const entries = db.list<Group>({ prefix: [groupsPrefix] });
+  const groups: Group[] = [];
+  for await (const { value } of entries) {
+    if (value.adminIds.includes(id)) {
+      groups.push(value);
+    }
+  }
+  return groups;
+}
+
+export async function getUserGroups(id: string, groupIds: string[]) {
+  const [managed, other] = await Promise.all([getGroupsByAdminId(id), getGroups(groupIds)]);
+  return managed.concat(other);
 }
 
 export async function addGroup(

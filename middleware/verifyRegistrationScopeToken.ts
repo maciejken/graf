@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "npm:express@4";
-import { UserData } from "../types.ts";
+import { UserData } from "../services/user/types.ts";
 import {
   getCredentials,
   verifyRegistrationToken,
@@ -10,7 +10,7 @@ import { Credentials } from "../services/auth/types.ts";
 
 export async function verifyRegistrationScopeToken(
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ) {
   try {
@@ -27,7 +27,7 @@ export async function verifyRegistrationScopeToken(
       const credentials: Credentials | null = await getCredentials(
         authenticatedUser.credentialsId
       );
-      res.locals.user = {
+      req.user = {
         ...authenticatedUser,
         challenge: credentials?.currentChallenge,
       };

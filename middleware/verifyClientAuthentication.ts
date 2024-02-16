@@ -10,7 +10,7 @@ export async function verifyClientAuthentication(
   res: Response,
   next: NextFunction
 ) {
-  const user = res.locals.user;
+  const user = req.user;
   let error: Error | null = null;
   const authenticatorId: string = req.body.id;
   let result = null;

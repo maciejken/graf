@@ -3,7 +3,7 @@ import {
   credentialsPrefix,
   usersPrefix,
 } from "../../constants.ts";
-import { NewUser, UserData } from "../../types.ts";
+import { NewUser, UserData } from "./types.ts";
 import {
   createCredentials,
   generatePasswordHash,
@@ -19,6 +19,18 @@ export async function getAllUsers(): Promise<UserData[]> {
   const users: UserData[] = [];
   for await (const { value } of entries) {
     users.push(value);
+  }
+  return users;
+}
+
+export async  function getGroupUsers(groupId: string, adminIds: string[]): Promise<UserData[]> {
+  const entries = db.list<UserData>({ prefix: [usersPrefix] });
+  const users: UserData[] = [];
+  for await (const { value } of entries) {
+    const shouldIncludeUser = value.groupIds.includes(groupId) || adminIds.includes(value.id);
+    if (shouldIncludeUser) {
+      users.push(value);
+    }
   }
   return users;
 }
@@ -92,6 +104,7 @@ export async function updateUser(
         email: email || user.email,
         phone: phone || user.phone,
         credentialsId: user.credentialsId,
+        groupIds: user.groupIds,
       })
     );
   }

@@ -67,6 +67,9 @@ app.use(
   verifyGenericScopeToken,
   createHandler({
     schema,
+    context: (req) => ({
+      user: req.raw.user,
+    })
   })
 );
 
