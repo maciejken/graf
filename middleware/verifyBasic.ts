@@ -1,11 +1,11 @@
-import { Request, Response, NextFunction } from "npm:express@4";
+import { NextFunction, Request, Response } from "express";
 import { UserData } from "../services/user/types.ts";
 import { verifyBasicAuth } from "../services/auth/authService.ts";
 
 export async function verifyBasic(
   req: Request,
   _res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   try {
     const { authorization } = req.headers;

@@ -1,11 +1,11 @@
-import { Request, Response, NextFunction } from "npm:express@4";
-import { UserData } from "../types.ts";
+import { NextFunction, Request, Response } from "express";
+import { UserData } from "../services/user/types.ts";
 import { getUserByEmail } from "../services/user/userService.ts";
 
 export async function checkUsernameAvailable(
   req: Request,
   _res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   try {
     const { email } = req.body;

@@ -1,4 +1,4 @@
-import { Request, Response } from "npm:express@4";
+import { Request, Response } from "express";
 import { PublicKeyCredentialCreationOptionsJSON } from "https://deno.land/x/simplewebauthn@v9.0.0/deno/types.ts";
 import {
   createNewAuthenticator,

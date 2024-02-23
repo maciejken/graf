@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "npm:express@4";
+import { NextFunction, Request, Response } from "express";
 import { UserData } from "../services/user/types.ts";
 import {
   getCredentials,
@@ -11,7 +11,7 @@ import { Credentials } from "../services/auth/types.ts";
 export async function verifyAuthenticationScopeToken(
   req: Request,
   _res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   try {
     const { authorization } = req.headers;
@@ -25,7 +25,7 @@ export async function verifyAuthenticationScopeToken(
 
     if (authenticatedUser) {
       const credentials: Credentials | null = await getCredentials(
-        authenticatedUser.credentialsId
+        authenticatedUser.credentialsId,
       );
       req.user = {
         ...authenticatedUser,

@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "npm:express@4";
+import { Request, Response, NextFunction } from "express";
 import { UserData } from "../services/user/types.ts";
 import {
   getCredentials,

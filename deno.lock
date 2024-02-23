@@ -672,6 +672,7 @@
   "workspace": {
     "dependencies": [
       "npm:@types/jsonwebtoken",
+      "npm:express@4",
       "npm:jsonwebtoken@9.0.2"
     ]
   }

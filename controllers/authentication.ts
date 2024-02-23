@@ -1,4 +1,4 @@
-import { Request, Response } from "npm:express@4";
+import { Request, Response } from "express";
 import { PublicKeyCredentialRequestOptionsJSON } from "https://deno.land/x/simplewebauthn@v9.0.0/deno/types.ts";
 import {
   getAuthenticationOptions,
@@ -28,7 +28,7 @@ export async function getAuthInfo(req: Request, res: Response) {
 
 export async function getAuthenticationScopeToken(
   req: Request,
-  res: Response
+  res: Response,
 ) {
   try {
     const token = await getAuthenticationToken(req.user.id);
