@@ -1,22 +1,30 @@
-export interface Document<T = number> {
+export interface NewDocument {
   type: string;
   title: string;
-  content: T;
-  authorId: string;
-  permissions: Permission[];
+  content: string;
+  userId: string;  
+}
+
+export interface Document extends NewDocument {
+  id: string;
+  permissions: Permissions;
   createdAt: string;
   updatedAt?: string;
 }
 
 export type DocumentType = 'counter' | 'note';
 
-export interface Permission {
-  subjectId: string;
-  subjectType: 'user' | 'group',
-  accessLevel: AccessLevel;
+export interface Permissions {
+  [id: string]: AccessLevel;
 }
 
+export interface Permission {
+  id: string;
+  value: AccessLevel;
+};
+
 export enum AccessLevel {
+  None,
   View,
   Update,
   Manage,

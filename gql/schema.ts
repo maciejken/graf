@@ -1,26 +1,47 @@
 import {
-  GraphQLObjectType,
-  GraphQLString,
-  GraphQLSchema,
+  GraphQLFloat,
+  GraphQLInputObjectType,
   GraphQLList,
   GraphQLNonNull,
+  GraphQLObjectType,
+  GraphQLSchema,
+  GraphQLString,
 } from "npm:graphql";
-import { Application, Company, Document, UserData } from "../types.ts";
-import { getDatabase } from "../services/dbService.ts";
+import { Context } from "../types.ts";
 import {
-  getDocumentById,
-  getDocumentsByUserId,
+  getAllDocuments,
+  getUserDocuments,
 } from "../services/document/documentService.ts";
-import { getApplicationsByDocumentId } from "../services/application/applicationService.ts";
 import {
   deleteUser,
   getAllUsers,
+  getGroupUsers,
   getUserById,
+  removeUserFromGroup,
   updateUser,
 } from "../services/user/userService.ts";
-import { getCompanyById } from "../services/company/companyService.ts";
-
-const db = getDatabase();
+import {
+  Document,
+  NewDocument,
+  Permission,
+} from "../services/document/types.ts";
+import {
+  addDocument,
+  deleteDocument,
+  getGroupDocuments,
+  updateDocument,
+  updateDocumentPermissions,
+} from "../services/document/documentService.ts";
+import {
+  addGroup,
+  deleteGroup,
+  getAllGroups,
+  getUserGroups,
+  updateGroup,
+} from "../services/group/groupService.ts";
+import { Group } from "../services/group/types.ts";
+import { UserData } from "../services/user/types.ts";
+import { addUserToGroup } from "../services/user/userService.ts";
 
 const UserType: GraphQLObjectType = new GraphQLObjectType<UserData>({
   name: "User",
@@ -30,10 +51,60 @@ const UserType: GraphQLObjectType = new GraphQLObjectType<UserData>({
     lastName: { type: GraphQLString },
     email: { type: GraphQLString },
     phone: { type: GraphQLString },
+    groups: {
+      type: new GraphQLList(GroupType),
+      resolve({ id, groupIds }: UserData) {
+        return getUserGroups(id, groupIds);
+      },
+    },
     documents: {
       type: new GraphQLList(DocumentType),
-      resolve({ id: userId }: UserData) {
-        return getDocumentsByUserId(userId);
+      resolve({ id, groupIds }: UserData) {
+        return getUserDocuments(id, groupIds);
+      },
+    },
+  }),
+});
+
+const ViewerType: GraphQLObjectType = new GraphQLObjectType({
+  name: "Viewer",
+  fields: () => ({
+    id: { type: GraphQLString },
+    firstName: { type: GraphQLString },
+    lastName: { type: GraphQLString },
+    email: { type: GraphQLString },
+    phone: { type: GraphQLString },
+    groups: {
+      type: new GraphQLList(GroupType),
+      resolve({ id, groupIds }: UserData) {
+        return getUserGroups(id, groupIds);
+      },
+    },
+    documents: {
+      type: new GraphQLList(DocumentType),
+      resolve({ id, groupIds }: UserData) {
+        return getUserDocuments(id, groupIds);
+      },
+    },
+  }),
+});
+
+const GroupType: GraphQLObjectType = new GraphQLObjectType<Group>({
+  name: "Group",
+  fields: () => ({
+    id: { type: GraphQLString },
+    name: { type: GraphQLString },
+    adminIds: { type: new GraphQLList(GraphQLString) },
+    users: {
+      type: new GraphQLList(UserType),
+      resolve({ id, adminIds }: Group) {
+        return getGroupUsers(id, adminIds);
+      },
+    },
+    documents: {
+      type: new GraphQLList(DocumentType),
+      resolve({ id }: Group) {
+        return getGroupDocuments(id);
       },
     },
   }),
@@ -49,54 +120,16 @@ const DocumentType: GraphQLObjectType = new GraphQLObjectType<Document>({
         return getUserById(userId);
       },
     },
+    type: { type: GraphQLString },
+    title: { type: GraphQLString },
     content: { type: GraphQLString },
-    contentType: { type: GraphQLString },
-    applications: {
-      type: new GraphQLList(ApplicationType),
-      resolve({ id: documentId }: Document) {
-        return getApplicationsByDocumentId(documentId);
-      },
-    },
-  }),
-});
-
-const CompanyType = new GraphQLObjectType<Company>({
-  name: "Company",
-  fields: {
-    id: { type: GraphQLString },
-    name: { type: GraphQLString },
-    email: { type: GraphQLString },
-    phone: { type: GraphQLString },
-    address: { type: GraphQLString },
-    description: { type: GraphQLString },
-  },
-});
-
-const ApplicationType: GraphQLObjectType = new GraphQLObjectType<Application>({
-  name: "Application",
-  fields: () => ({
-    id: { type: GraphQLString },
-    date: { type: GraphQLString },
-    position: { type: GraphQLString },
-    document: {
-      type: DocumentType,
-      resolve({ documentId }: Application) {
-        return getDocumentById(documentId);
-      },
-    },
-    company: {
-      type: CompanyType,
-      resolve({ companyId }: Application) {
-        return getCompanyById(companyId);
-      },
-    },
-    description: { type: GraphQLString },
   }),
 });
 
 const query = new GraphQLObjectType({
   name: "RootQueryType",
   fields: {
+    viewer: { type: ViewerType },
     user: {
       type: UserType,
       args: { id: { type: GraphQLString } },
@@ -110,28 +143,27 @@ const query = new GraphQLObjectType({
         return getAllUsers();
       },
     },
-    company: {
-      type: CompanyType,
-      args: { id: { type: GraphQLString } },
-      async resolve(_parentValue, args) {
-        return (await db.get(["companies", args.id])).value;
+    groups: {
+      type: new GraphQLList(GroupType),
+      resolve() {
+        return getAllGroups();
       },
     },
-    document: {
-      type: DocumentType,
-      args: { id: { type: GraphQLString } },
-      async resolve(_parentValue, args) {
-        return (await db.get(["documents", args.id])).value;
-      },
-    },
-    application: {
-      type: ApplicationType,
-      args: { id: { type: GraphQLString } },
-      async resolve(_parentValue, args) {
-        return (await db.get(["applications", args.id])).value;
+    documents: {
+      type: new GraphQLList(DocumentType),
+      resolve() {
+        return getAllDocuments();
       },
     },
   },
+});
+
+const PermissionType = new GraphQLInputObjectType({
+  name: "Permission",
+  fields: () => ({
+    id: { type: GraphQLString },
+    value: { type: GraphQLFloat },
+  }),
 });
 
 const mutation = new GraphQLObjectType({
@@ -151,6 +183,34 @@ const mutation = new GraphQLObjectType({
         return updateUser(args.id, args);
       },
     },
+    addUserToGroup: {
+      type: UserType,
+      args: {
+        userId: { type: new GraphQLNonNull(GraphQLString) },
+        groupId: { type: new GraphQLNonNull(GraphQLString) },
+      },
+      resolve(_parentValue, { userId, groupId }, context: Context) {
+        return addUserToGroup({
+          userId,
+          groupId,
+          currentUserId: context.user.id,
+        });
+      },
+    },
+    removeUserFromGroup: {
+      type: UserType,
+      args: {
+        userId: { type: new GraphQLNonNull(GraphQLString) },
+        groupId: { type: new GraphQLNonNull(GraphQLString) },
+      },
+      resolve(_parentValue, { userId, groupId }, context: Context) {
+        return removeUserFromGroup({
+          userId,
+          groupId,
+          currentUserId: context.user.id,
+        });
+      },
+    },
     deleteUser: {
       type: UserType,
       args: {
@@ -158,6 +218,94 @@ const mutation = new GraphQLObjectType({
       },
       resolve(_parentValue, { id }: UserData) {
         return deleteUser(id);
+      },
+    },
+    addGroup: {
+      type: GroupType,
+      args: {
+        name: { type: new GraphQLNonNull(GraphQLString) },
+      },
+      resolve(_parentValue, { name }, context: Context) {
+        return addGroup(name, context.user.id);
+      },
+    },
+    updateGroup: {
+      type: GroupType,
+      args: {
+        id: { type: new GraphQLNonNull(GraphQLString) },
+        name: { type: GraphQLString },
+        adminIds: { type: new GraphQLList(GraphQLString) },
+      },
+      resolve(_parentValue, args: Group, context: Context) {
+        return updateGroup(args.id, {
+          ...args,
+          currentUserId: context.user.id,
+        });
+      },
+    },
+    deleteGroup: {
+      type: GroupType,
+      args: {
+        id: { type: new GraphQLNonNull(GraphQLString) },
+      },
+      resolve(_parentValue, { id }: Group, context: Context) {
+        return deleteGroup(id, context.user.id);
+      },
+    },
+    addDocument: {
+      type: DocumentType,
+      args: {
+        type: { type: new GraphQLNonNull(GraphQLString) },
+        title: { type: GraphQLString },
+        content: { type: new GraphQLNonNull(GraphQLString) },
+      },
+      resolve(
+        _parentValue,
+        { type, title, content }: NewDocument,
+        context: Context,
+      ) {
+        return addDocument({
+          type,
+          title,
+          content,
+          userId: context.user.id,
+        });
+      },
+    },
+    updateDocument: {
+      type: DocumentType,
+      args: {
+        id: { type: new GraphQLNonNull(GraphQLString) },
+        type: { type: GraphQLString },
+        title: { type: GraphQLString },
+        content: { type: GraphQLString },
+      },
+      resolve(_parentValue, args) {
+        return updateDocument(args.id, args);
+      },
+    },
+    updateDocumentPermissions: {
+      type: DocumentType,
+      args: {
+        id: { type: new GraphQLNonNull(GraphQLString) },
+        permissions: {
+          type: new GraphQLNonNull(new GraphQLList(PermissionType)),
+        },
+      },
+      resolve(
+        _parentValue,
+        { id, permissions }: { id: string; permissions: Permission[] },
+      ) {
+        return updateDocumentPermissions(id, permissions);
+      },
+    },
+    deleteDocument: {
+      type: DocumentType,
+      args: {
+        id: { type: new GraphQLNonNull(GraphQLString) },
+      },
+      resolve(_parentValue, { id }: UserData) {
+        return deleteDocument(id);
       },
     },
   },

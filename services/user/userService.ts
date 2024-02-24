@@ -3,7 +3,7 @@ import {
   credentialsPrefix,
   usersPrefix,
 } from "../../constants.ts";
-import { NewUser, UserData } from "../../types.ts";
+import { NewUser, UserData } from "./types.ts";
 import {
   createCredentials,
   generatePasswordHash,
@@ -11,6 +11,7 @@ import {
 } from "../auth/authService.ts";
 import { Credentials } from "../auth/types.ts";
 import { getDatabase } from "../dbService.ts";
+import { getGroupById } from "../group/groupService.ts";
 
 const db = getDatabase();
 
@@ -19,6 +20,19 @@ export async function getAllUsers(): Promise<UserData[]> {
   const users: UserData[] = [];
   for await (const { value } of entries) {
     users.push(value);
+  }
+  return users;
+}
+
+export async  function getGroupUsers(groupId: string, adminIds: string[]): Promise<UserData[]> {
+  const entries = db.list<UserData>({ prefix: [usersPrefix] });
+  const users: UserData[] = [];
+  for await (const { value } of entries) {
+    const shouldIncludeUser = value.groupIds?.includes(groupId) || adminIds.includes(value.id);
+
+    if (shouldIncludeUser) {
+      users.push(value);
+    }
   }
   return users;
 }
@@ -92,11 +106,42 @@ export async function updateUser(
         email: email || user.email,
         phone: phone || user.phone,
         credentialsId: user.credentialsId,
+        groupIds: user.groupIds,
       })
     );
   }
   await Promise.all(updates);
   return getUserById(id);
+}
+
+export async function addUserToGroup({ currentUserId, groupId, userId }: { currentUserId: string, groupId: string, userId: string }) {
+  const [user, group] = await Promise.all([getUserById(userId), getGroupById(groupId)]);
+
+  const canAddUser = group?.adminIds.includes(currentUserId) && user && !user.groupIds.includes(groupId);
+
+  if (canAddUser) {
+    await db.set([usersPrefix, userId], {
+      ...user,
+      groupIds: [...user.groupIds, groupId],
+    });
+  }
+
+  return getUserById(userId);
+}
+
+export async function removeUserFromGroup({ currentUserId, groupId, userId }: { currentUserId: string, groupId: string, userId: string }) {
+  const [user, group] = await Promise.all([getUserById(userId), getGroupById(groupId)]);
+
+  const canRemoveUser = group?.adminIds.includes(currentUserId) && user && user.groupIds.includes(groupId);
+
+  if (canRemoveUser) {
+    await db.set([usersPrefix, userId], {
+      ...user,
+      groupIds: user.groupIds.filter((id: string) => id !== groupId),
+    });
+  }
+
+  return getUserById(userId);
 }
 
 export async function deleteUser(id: string): Promise<UserData | null> {

@@ -1,12 +1,12 @@
-import { Request, Response, NextFunction } from "npm:express@4";
+import { NextFunction, Request, Response } from "express";
 import { verifyRegistration } from "../services/auth/authService.ts";
 
 export async function verifyClientRegistration(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
-  const user = res.locals.user;
+  const user = req.user;
   let error: Error | null = null;
 
   if (!user.challenge) {

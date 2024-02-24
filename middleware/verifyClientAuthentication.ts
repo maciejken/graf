@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "npm:express@4";
+import { NextFunction, Request, Response } from "express";
 import {
   getAuthenticator,
   verifyAuthentication,
@@ -8,9 +8,9 @@ import { Authenticator } from "../services/auth/types.ts";
 export async function verifyClientAuthentication(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
-  const user = res.locals.user;
+  const user = req.user;
   let error: Error | null = null;
   const authenticatorId: string = req.body.id;
   let result = null;
@@ -25,19 +25,19 @@ export async function verifyClientAuthentication(
 
   if (!authenticatorId) {
     error = new Error(
-      "Failed to verify client due to missing authenticator id."
+      "Failed to verify client due to missing authenticator id.",
     );
   }
 
   const authenticator: Authenticator | null = await getAuthenticator(
-    authenticatorId
+    authenticatorId,
   );
 
   if (authenticator) {
     result = await verifyAuthentication(
       req.body,
       user.challenge,
-      authenticator
+      authenticator,
     );
   }
 

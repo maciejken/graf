@@ -1,11 +1,11 @@
-import { Request, Response, NextFunction } from "npm:express@4";
-import { UserData } from "../types.ts";
+import { NextFunction, Request, Response } from "express";
+import { UserData } from "../services/user/types.ts";
 import { verifyBasicAuth } from "../services/auth/authService.ts";
 
 export async function verifyBasic(
   req: Request,
-  res: Response,
-  next: NextFunction
+  _res: Response,
+  next: NextFunction,
 ) {
   try {
     const { authorization } = req.headers;
@@ -17,7 +17,7 @@ export async function verifyBasic(
     }
 
     if (authenticatedUser) {
-      res.locals.user = authenticatedUser;
+      req.user = authenticatedUser;
     }
 
     next(authenticatedUser ? undefined : new Error("Unauthenticated"));

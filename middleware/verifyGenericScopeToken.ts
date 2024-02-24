@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from "npm:express@4";
-import { UserData } from "../types.ts";
+import { NextFunction, Request, Response } from "express";
+import { UserData } from "../services/user/types.ts";
 import {
   getCredentials,
   verifyGenericToken,
@@ -10,8 +10,8 @@ import { Credentials } from "../services/auth/types.ts";
 
 export async function verifyGenericScopeToken(
   req: Request,
-  res: Response,
-  next: NextFunction
+  _res: Response,
+  next: NextFunction,
 ) {
   try {
     const { authorization } = req.headers;
@@ -25,9 +25,10 @@ export async function verifyGenericScopeToken(
 
     if (authenticatedUser) {
       const credentials: Credentials | null = await getCredentials(
-        authenticatedUser.credentialsId
+        authenticatedUser.credentialsId,
       );
-      res.locals.user = {
+
+      req.user = {
         ...authenticatedUser,
         challenge: credentials?.currentChallenge,
       };

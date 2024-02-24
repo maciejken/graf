@@ -15,6 +15,7 @@ import { privateKey } from "../config.ts";
 //   ["encrypt", "decrypt"]
 // );
 
+// @TODO: store encrypted key in db, and salt/passphrase as env variable
 export async function getPrivateKey() {
   // const buffer = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
   // const bytes = new Uint8Array(buffer);

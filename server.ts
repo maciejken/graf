@@ -1,4 +1,4 @@
-import express from "npm:express@4";
+import express from "express";
 import { createHandler } from "npm:graphql-http/lib/use/express";
 import cors from "npm:cors@2";
 import { schema } from "./gql/schema.ts";
@@ -12,15 +12,16 @@ import {
 import { verifyClientRegistration } from "./middleware/verifyClientRegistration.ts";
 import { checkConfig, envName, expectedOrigin, host, port } from "./config.ts";
 import {
-  getAuthOptions,
-  getAuthInfo,
   getAuthenticationScopeToken,
+  getAuthInfo,
+  getAuthOptions,
 } from "./controllers/authentication.ts";
 import { verifyClientAuthentication } from "./middleware/verifyClientAuthentication.ts";
 import { verifyRegistrationScopeToken } from "./middleware/verifyRegistrationScopeToken.ts";
 import { checkUsernameAvailable } from "./middleware/checkUsernameAvailable.ts";
 import { verifyAuthenticationScopeToken } from "./middleware/verifyAuthenticationScopeToken.ts";
 import { verifyGenericScopeToken } from "./middleware/verifyGenericScopeToken.ts";
+import { rootValue } from "./gql/resolvers.ts";
 
 const app = express();
 
@@ -37,14 +38,14 @@ app.get("/registration/token", verifyBasic, getRegistrationScopeToken);
 app.get(
   "/registration/options",
   verifyRegistrationScopeToken,
-  getRegistrationOptions
+  getRegistrationOptions,
 );
 
 app.post(
   "/registration/info",
   verifyRegistrationScopeToken,
   verifyClientRegistration,
-  getRegistrationInfo
+  getRegistrationInfo,
 );
 
 app.get("/authentication/token", verifyBasic, getAuthenticationScopeToken);
@@ -52,14 +53,14 @@ app.get("/authentication/token", verifyBasic, getAuthenticationScopeToken);
 app.get(
   "/authentication/options",
   verifyAuthenticationScopeToken,
-  getAuthOptions
+  getAuthOptions,
 );
 
 app.post(
   "/authentication/info",
   verifyAuthenticationScopeToken,
   verifyClientAuthentication,
-  getAuthInfo
+  getAuthInfo,
 );
 
 app.use(
@@ -67,7 +68,11 @@ app.use(
   verifyGenericScopeToken,
   createHandler({
     schema,
-  })
+    context: (req) => ({
+      user: req.raw.user,
+    }),
+    rootValue,
+  }),
 );
 
 const prefix = envName === "dev" ? "http://" : "https://";
