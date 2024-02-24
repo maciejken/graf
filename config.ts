@@ -1,7 +1,6 @@
 export const envName = Deno.env.get("ENV_NAME");
 export const host = Deno.env.get("HOST");
 export const port = Deno.env.get("PORT");
-export const dbUrl = Deno.env.get("DB_URL");
 export const relyingPartyId = Deno.env.get("RELYING_PARTY_ID");
 export const relyingPartyName = Deno.env.get("RELYING_PARTY_NAME");
 export const expectedOrigin = Deno.env.get("EXPECTED_ORIGIN");
@@ -36,10 +35,9 @@ export function checkConfig() {
         .join(", ")
     }`;
     console.error(msg);
+  } else {
+    console.debug("Environment variables are ok.");
   }
-
-  console.debug("Environment variables are ok");
-  console.debug("Database url:", dbUrl);
 
   return true;
 }
