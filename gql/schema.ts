@@ -69,7 +69,23 @@ const UserType: GraphQLObjectType = new GraphQLObjectType<UserData>({
 const ViewerType: GraphQLObjectType = new GraphQLObjectType({
   name: "Viewer",
   fields: () => ({
-    user: { type: UserType },
+    id: { type: GraphQLString },
+    firstName: { type: GraphQLString },
+    lastName: { type: GraphQLString },
+    email: { type: GraphQLString },
+    phone: { type: GraphQLString },
+    groups: {
+      type: new GraphQLList(GroupType),
+      resolve({ id, groupIds }: UserData) {
+        return getUserGroups(id, groupIds);
+      },
+    },
+    documents: {
+      type: new GraphQLList(DocumentType),
+      resolve({ id, groupIds }: UserData) {
+        return getUserDocuments(id, groupIds);
+      },
+    },
   }),
 });
 
