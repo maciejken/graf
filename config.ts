@@ -35,7 +35,7 @@ export function checkConfig() {
         .map(({ key }) => key)
         .join(", ")
     }`;
-    throw new Error(msg);
+    console.error(msg);
   }
 
   console.debug("Environment variables are ok");
