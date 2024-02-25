@@ -18,14 +18,13 @@ export async function getDocumentById(id: string): Promise<Document | null> {
   return (await db.get<Document>([documentsPrefix, id])).value;
 }
 
-export async function getUserDocuments(userId: string, userGroupIds: string[]): Promise<Document[]> {
+export async function getUserDocuments(
+  userId: string,
+): Promise<Document[]> {
   const entries = db.list<Document>({ prefix: [documentsPrefix] });
   const userDocuments = [];
   for await (const { value } of entries) {
-    const isUserDocument =
-      value.userId === userId
-      || value.permissions[userId]
-      || userGroupIds?.some((id: string) => value.permissions[id]);
+    const isUserDocument = value.userId === userId || value.permissions[userId];
 
     if (isUserDocument) {
       userDocuments.push(value);
@@ -34,7 +33,9 @@ export async function getUserDocuments(userId: string, userGroupIds: string[]): 
   return userDocuments;
 }
 
-export async function getGroupDocuments(groupId: string): Promise<Document[]> {
+export async function getGroupDocuments(
+  groupId: string,
+): Promise<Document[]> {
   const entries = db.list<Document>({ prefix: [documentsPrefix] });
   const groupDocs = [];
   for await (const { value } of entries) {
@@ -67,7 +68,7 @@ export async function addDocument({
 
 export async function updateDocument(
   id: string,
-  { type, title, content }: Omit<NewDocument, 'userId'>
+  { type, title, content }: Omit<NewDocument, "userId">,
 ): Promise<Document | null> {
   let doc: Document | null = await getDocumentById(id);
 
@@ -82,22 +83,27 @@ export async function updateDocument(
       createdAt: doc.createdAt,
       updatedAt: new Date().toISOString(),
     });
-    
+
     doc = await getDocumentById(id);
   }
 
   return doc;
 }
 
-export async function updateDocumentPermissions(id: string, permissions: Permission[]): Promise<Document | null> {
+export async function updateDocumentPermissions(
+  id: string,
+  permissions: Permission[],
+): Promise<Document | null> {
   const doc: Document | null = await getDocumentById(id);
 
-  if (doc) { 
+  if (doc) {
     await db.set([documentsPrefix, id], {
       ...doc,
       permissions: {
         ...doc.permissions,
-        ...Object.fromEntries(permissions.map(({ id, value }: Permission) => [id, value]))
+        ...Object.fromEntries(
+          permissions.map(({ id, value }: Permission) => [id, value]),
+        ),
       },
       updatedAt: new Date().toISOString(),
     });

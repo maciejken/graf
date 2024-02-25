@@ -1,6 +1,6 @@
 import {
-  GraphQLFloat,
   GraphQLInputObjectType,
+  GraphQLInt,
   GraphQLList,
   GraphQLNonNull,
   GraphQLObjectType,
@@ -59,8 +59,8 @@ const UserType: GraphQLObjectType = new GraphQLObjectType<UserData>({
     },
     documents: {
       type: new GraphQLList(DocumentType),
-      resolve({ id, groupIds }: UserData) {
-        return getUserDocuments(id, groupIds);
+      resolve({ id }: UserData) {
+        return getUserDocuments(id);
       },
     },
   }),
@@ -82,8 +82,8 @@ const ViewerType: GraphQLObjectType = new GraphQLObjectType({
     },
     documents: {
       type: new GraphQLList(DocumentType),
-      resolve({ id, groupIds }: UserData) {
-        return getUserDocuments(id, groupIds);
+      resolve({ id }: UserData) {
+        return getUserDocuments(id);
       },
     },
   }),
@@ -162,7 +162,7 @@ const PermissionType = new GraphQLInputObjectType({
   name: "Permission",
   fields: () => ({
     id: { type: GraphQLString },
-    value: { type: GraphQLFloat },
+    value: { type: GraphQLInt },
   }),
 });
 
