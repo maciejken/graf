@@ -1,6 +1,4 @@
-import { dbUrl } from "../config.ts";
-
-const db = await Deno.openKv(dbUrl);
+const db = await Deno.openKv();
 
 export function getDatabase(): Deno.Kv {
   return db;

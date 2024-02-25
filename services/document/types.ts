@@ -2,7 +2,7 @@ export interface NewDocument {
   type: string;
   title: string;
   content: string;
-  userId: string;  
+  userId: string;
 }
 
 export interface Document extends NewDocument {
@@ -12,7 +12,7 @@ export interface Document extends NewDocument {
   updatedAt?: string;
 }
 
-export type DocumentType = 'counter' | 'note';
+export type DocumentType = "counter" | "note";
 
 export interface Permissions {
   [id: string]: AccessLevel;
@@ -21,7 +21,7 @@ export interface Permissions {
 export interface Permission {
   id: string;
   value: AccessLevel;
-};
+}
 
 export enum AccessLevel {
   None,
