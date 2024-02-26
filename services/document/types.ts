@@ -12,6 +12,8 @@ export interface Document extends NewDocument {
   updatedAt?: string;
 }
 
+export type DocumentWithAccesLevel = Document & { accessLevel: AccessLevel };
+
 export type DocumentType = "counter" | "note";
 
 export interface Permissions {

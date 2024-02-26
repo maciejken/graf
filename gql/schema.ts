@@ -123,6 +123,7 @@ const DocumentType: GraphQLObjectType = new GraphQLObjectType<Document>({
     type: { type: GraphQLString },
     title: { type: GraphQLString },
     content: { type: GraphQLString },
+    accessLevel: { type: GraphQLInt },
   }),
 });
 
