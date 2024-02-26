@@ -2,6 +2,8 @@ import { documentsPrefix } from "../../constants.ts";
 import { Document, Permission } from "./types.ts";
 import { getDatabase } from "../dbService.ts";
 import { NewDocument } from "./types.ts";
+import { DocumentWithAccesLevel } from "./types.ts";
+import { AccessLevel } from "./types.ts";
 
 const db = getDatabase();
 
@@ -20,7 +22,7 @@ export async function getDocumentById(id: string): Promise<Document | null> {
 
 export async function getUserDocuments(
   userId: string,
-): Promise<Document[]> {
+): Promise<DocumentWithAccesLevel[]> {
   const entries = db.list<Document>({ prefix: [documentsPrefix] });
   const userDocuments = [];
   for await (const { value } of entries) {
@@ -30,20 +32,30 @@ export async function getUserDocuments(
       userDocuments.push(value);
     }
   }
-  return userDocuments;
+
+  return userDocuments.map((
+    d: Document,
+  ) => ({
+    ...d,
+    accessLevel: d.permissions[userId] ||
+      (d.userId === userId ? AccessLevel.Manage : AccessLevel.None),
+  }));
 }
 
 export async function getGroupDocuments(
   groupId: string,
-): Promise<Document[]> {
+): Promise<DocumentWithAccesLevel[]> {
   const entries = db.list<Document>({ prefix: [documentsPrefix] });
-  const groupDocs = [];
+  const groupDocuments = [];
   for await (const { value } of entries) {
     if (value.permissions[groupId]) {
-      groupDocs.push(value);
+      groupDocuments.push(value);
     }
   }
-  return groupDocs;
+  return groupDocuments.map((d: Document) => ({
+    ...d,
+    accessLevel: d.permissions[groupId],
+  }));
 }
 
 export async function addDocument({
