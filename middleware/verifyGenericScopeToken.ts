@@ -35,7 +35,8 @@ export async function verifyGenericScopeToken(
     }
 
     next(authenticatedUser ? undefined : new Error("Unauthenticated"));
-  } catch (_e: unknown) {
-    next("Unexpected error");
+  } catch (e: unknown) {
+    const expired = (e as Error).message.startsWith("jwt expired");
+    next(expired ? "Token expired" : "Unexpected error");
   }
 }

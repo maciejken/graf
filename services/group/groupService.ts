@@ -1,6 +1,8 @@
 import { groupsPrefix } from "../../constants.ts";
 import { Group } from "./types.ts";
 import { getDatabase } from "../dbService.ts";
+import { UserData } from "../user/types.ts";
+import { getUserById } from "../user/userService.ts";
 
 const db = getDatabase();
 
@@ -51,9 +53,19 @@ export async function getGroupsByAdminId(id: string): Promise<Group[]> {
   return groups;
 }
 
-export async function getUserGroups(id: string, groupIds: string[]) {
-  const [managed, other] = await Promise.all([getGroupsByAdminId(id), getGroups(groupIds)]);
-  return managed.concat(other);
+export async function getUserGroups(userId: string) {
+  const user: UserData | null = await getUserById(userId);
+  let groups: Group[] = [];
+
+  if (user) {
+    const [managed, other]: Array<Group | null>[] = await Promise.all([
+      getGroupsByAdminId(user.id),
+      getGroups(user.groupIds),
+    ]);
+    groups = [...managed.filter(Boolean), ...other.filter(Boolean)] as Group[];
+  }
+
+  return groups;
 }
 
 export async function addGroup(
@@ -74,7 +86,7 @@ export async function addGroup(
 
 export async function updateGroup(
   id: string,
-  { name, adminIds, currentUserId }: Group & { currentUserId: string }
+  { name, adminIds, currentUserId }: Group & { currentUserId: string },
 ): Promise<Group | null> {
   let group: Group | null = await getGroupById(id);
 
@@ -86,14 +98,17 @@ export async function updateGroup(
       createdAt: group.createdAt,
       updatedAt: new Date().toISOString(),
     });
-    
+
     group = await getGroupById(id);
   }
 
   return group;
 }
 
-export async function deleteGroup(id: string, currentUserId: string): Promise<Group | null> {
+export async function deleteGroup(
+  id: string,
+  currentUserId: string,
+): Promise<Group | null> {
   const group: Group | null = await getGroupById(id);
 
   if (group && group.adminIds.includes(currentUserId)) {
