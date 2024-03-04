@@ -34,13 +34,19 @@ export async function getUserDocuments(
     }
   }
 
-  return userDocuments.map((
+  const docsWithAccessLevels = userDocuments.map((
     d: Document,
   ) => ({
     ...d,
     accessLevel: d.permissions[userId] ||
       (d.userId === userId ? AccessLevel.Delete : AccessLevel.None),
   }));
+
+  docsWithAccessLevels.sort((d1, d2) =>
+    new Date(d2.createdAt).getTime() - new Date(d1.createdAt).getTime()
+  );
+
+  return docsWithAccessLevels;
 }
 
 export async function getGroupDocuments(
