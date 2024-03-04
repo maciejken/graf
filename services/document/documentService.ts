@@ -39,7 +39,7 @@ export async function getUserDocuments(
   ) => ({
     ...d,
     accessLevel: d.permissions[userId] ||
-      (d.userId === userId ? AccessLevel.Manage : AccessLevel.None),
+      (d.userId === userId ? AccessLevel.Delete : AccessLevel.None),
   }));
 }
 
@@ -157,8 +157,17 @@ export async function updateDocumentPermissions(
   return doc && { ...doc, accessLevel };
 }
 
-export async function deleteDocument(id: string): Promise<Document | null> {
-  await db.delete([documentsPrefix, id]);
+export async function deleteDocument(
+  id: string,
+  userId: string,
+): Promise<Document | null> {
+  const doc: Document | null = await getDocumentById(id);
+
+  if (doc) {
+    const accessLevel = await getDocumentAccessLevel(doc, userId);
+    accessLevel === AccessLevel.Delete &&
+      await db.delete([documentsPrefix, id]);
+  }
 
   return getDocumentById(id);
 }

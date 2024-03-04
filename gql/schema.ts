@@ -230,6 +230,21 @@ const PermissionType = new GraphQLInputObjectType({
   }),
 });
 
+const AddDocumentMutationResponseType = new GraphQLObjectType({
+  name: "AddDocumentMutationResponse",
+  fields: {
+    viewer: { type: ViewerType },
+    documentEdge: { type: DocumentsConnectionEdgeType },
+  },
+});
+
+const DocumentMutationResponseType = new GraphQLObjectType({
+  name: "DocumentMutationResponse",
+  fields: {
+    viewer: { type: ViewerType },
+  },
+});
+
 const mutation = new GraphQLObjectType({
   name: "RootMutationType",
   fields: {
@@ -317,66 +332,79 @@ const mutation = new GraphQLObjectType({
       },
     },
     addDocument: {
-      type: DocumentType,
+      type: AddDocumentMutationResponseType,
       args: {
         type: { type: new GraphQLNonNull(GraphQLString) },
         title: { type: GraphQLString },
         content: { type: new GraphQLNonNull(GraphQLString) },
       },
-      resolve(
+      async resolve(
         _parentValue,
         { type, title, content }: NewDocument,
         context: Context,
       ) {
-        return addDocument({
+        const newDocument = await addDocument({
           type,
           title,
           content,
           userId: context.user.id,
         });
+        return {
+          viewer: context.user,
+          documentEdge: {
+            node: newDocument,
+          },
+        };
       },
     },
     updateDocument: {
-      type: DocumentType,
+      type: DocumentMutationResponseType,
       args: {
         id: { type: new GraphQLNonNull(GraphQLString) },
         type: { type: GraphQLString },
         title: { type: GraphQLString },
         content: { type: GraphQLString },
       },
-      resolve(_parentValue, args, context: Context) {
-        return updateDocument(args.id, {
+      async resolve(_parentValue, args, context: Context) {
+        await updateDocument(args.id, {
           ...args,
           contributorId: context.user.id,
         });
+        return {
+          viewer: context.user,
+        };
       },
     },
     updateDocumentPermissions: {
-      type: DocumentType,
+      type: DocumentMutationResponseType,
       args: {
         id: { type: new GraphQLNonNull(GraphQLString) },
         permissions: {
           type: new GraphQLNonNull(new GraphQLList(PermissionType)),
         },
       },
-      resolve(
+      async resolve(
         _parentValue,
         { id, permissions }: { id: string; permissions: Permission[] },
         context: Context,
       ) {
-        return updateDocumentPermissions(id, {
+        await updateDocumentPermissions(id, {
           permissions,
           contributorId: context.user.id,
         });
+        return {
+          viewer: context.user,
+        };
       },
     },
     deleteDocument: {
-      type: DocumentType,
+      type: DocumentMutationResponseType,
       args: {
         id: { type: new GraphQLNonNull(GraphQLString) },
       },
-      resolve(_parentValue, { id }: UserData) {
-        return deleteDocument(id);
+      async resolve(_parentValue, { id }: UserData, context: Context) {
+        await deleteDocument(id, context.user.id);
+        return { viewer: context.user };
       },
     },
   },
