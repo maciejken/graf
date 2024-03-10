@@ -30,4 +30,5 @@ export enum AccessLevel {
   View,
   Update,
   Manage,
+  Delete,
 }
