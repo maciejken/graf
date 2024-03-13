@@ -99,8 +99,8 @@ const UserType: GraphQLObjectType = new GraphQLObjectType<UserData>({
     },
     documents: {
       type: new GraphQLList(DocumentType),
-      resolve({ id }: UserData) {
-        return getUserDocuments(id);
+      resolve(user: UserData) {
+        return getUserDocuments(user);
       },
     },
   }),
@@ -120,6 +120,7 @@ const DocumentType: GraphQLObjectType = new GraphQLObjectType<Document>({
     title: { type: GraphQLString },
     content: { type: GraphQLString },
     accessLevel: { type: GraphQLInt },
+    createdAt: { type: GraphQLString },
   }),
 });
 
@@ -149,11 +150,11 @@ const ViewerType: GraphQLObjectType = new GraphQLObjectType({
         first: { type: GraphQLInt },
         after: { type: GraphQLString },
       },
-      async resolve({ id }: UserData, { first, after: afterStr }) {
+      async resolve(viewer: UserData, { first, after: afterStr }) {
         const count = first ?? Infinity;
         const after = parseInt(afterStr, 10) || 0;
         const next = count + after;
-        const documents = await getUserDocuments(id);
+        const documents = await getUserDocuments(viewer);
         return {
           pageInfo: {
             hasNextPage: documents.length >= next,
@@ -183,8 +184,8 @@ const GroupType: GraphQLObjectType = new GraphQLObjectType<Group>({
     },
     documents: {
       type: new GraphQLList(DocumentType),
-      resolve({ id }: Group) {
-        return getGroupDocuments(id);
+      resolve(group: Group) {
+        return getGroupDocuments(group);
       },
     },
   }),
