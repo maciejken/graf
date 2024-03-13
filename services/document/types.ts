@@ -21,7 +21,7 @@ export interface Permissions {
 }
 
 export interface Permission {
-  id: string;
+  key: string;
   value: AccessLevel;
 }
 

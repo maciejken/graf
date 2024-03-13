@@ -225,7 +225,7 @@ const query = new GraphQLObjectType({
 const PermissionType = new GraphQLInputObjectType({
   name: "Permission",
   fields: () => ({
-    id: { type: GraphQLString },
+    key: { type: GraphQLString },
     value: { type: GraphQLInt },
   }),
 });
@@ -318,7 +318,7 @@ const mutation = new GraphQLObjectType({
       resolve(_parentValue, args: Group, context: Context) {
         return updateGroup(args.id, {
           ...args,
-          currentUserId: context.user.id,
+          viewer: context.user,
         });
       },
     },
@@ -328,7 +328,7 @@ const mutation = new GraphQLObjectType({
         id: { type: new GraphQLNonNull(GraphQLString) },
       },
       resolve(_parentValue, { id }: Group, context: Context) {
-        return deleteGroup(id, context.user.id);
+        return deleteGroup(id, context.user);
       },
     },
     addDocument: {
@@ -390,7 +390,7 @@ const mutation = new GraphQLObjectType({
       ) {
         await updateDocumentPermissions(id, {
           permissions,
-          contributorId: context.user.id,
+          viewer: context.user,
         });
         return {
           viewer: context.user,
@@ -403,7 +403,7 @@ const mutation = new GraphQLObjectType({
         id: { type: new GraphQLNonNull(GraphQLString) },
       },
       async resolve(_parentValue, { id }: UserData, context: Context) {
-        await deleteDocument(id, context.user.id);
+        await deleteDocument(id, context.user);
         return { viewer: context.user };
       },
     },
