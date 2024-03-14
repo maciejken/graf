@@ -369,7 +369,7 @@ const mutation = new GraphQLObjectType({
       async resolve(_parentValue, args, context: Context) {
         await updateDocument(args.id, {
           ...args,
-          contributorId: context.user.id,
+          viewer: context.user,
         });
         return {
           viewer: context.user,
