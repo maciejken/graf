@@ -231,8 +231,8 @@ const PermissionType = new GraphQLInputObjectType({
   }),
 });
 
-const AddDocumentMutationResponseType = new GraphQLObjectType({
-  name: "AddDocumentMutationResponse",
+const DocumentMutationResponseWithEdgeType = new GraphQLObjectType({
+  name: "DocumentMutationResponseWithEdge",
   fields: {
     viewer: { type: ViewerType },
     documentEdge: { type: DocumentsConnectionEdgeType },
@@ -333,7 +333,7 @@ const mutation = new GraphQLObjectType({
       },
     },
     addDocument: {
-      type: AddDocumentMutationResponseType,
+      type: DocumentMutationResponseWithEdgeType,
       args: {
         type: { type: new GraphQLNonNull(GraphQLString) },
         title: { type: GraphQLString },
@@ -359,7 +359,7 @@ const mutation = new GraphQLObjectType({
       },
     },
     updateDocument: {
-      type: DocumentMutationResponseType,
+      type: DocumentMutationResponseWithEdgeType,
       args: {
         id: { type: new GraphQLNonNull(GraphQLString) },
         type: { type: GraphQLString },
@@ -367,12 +367,15 @@ const mutation = new GraphQLObjectType({
         content: { type: GraphQLString },
       },
       async resolve(_parentValue, args, context: Context) {
-        await updateDocument(args.id, {
+        const updatedDocument = await updateDocument(args.id, {
           ...args,
           viewer: context.user,
         });
         return {
           viewer: context.user,
+          documentEdge: {
+            node: updatedDocument,
+          },
         };
       },
     },
