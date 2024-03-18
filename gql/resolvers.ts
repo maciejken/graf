@@ -14,4 +14,4 @@ export const rootValue = {
   },
 };
 
-export * from "./documentResolvers/index.ts";
+export * from "./documentResolvers.ts";

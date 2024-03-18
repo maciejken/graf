@@ -34,6 +34,7 @@ import { Group } from "../services/group/types.ts";
 import { User } from "../services/user/types.ts";
 import { addUserToGroup } from "../services/user/userService.ts";
 import {
+  resolveDocument,
   resolveDocumentPermissionsUpdate,
   resolveDocumentRemoval,
   resolveDocumentUpdate,
@@ -118,6 +119,7 @@ const DocumentType: GraphQLObjectType = new GraphQLObjectType<Document>({
     content: { type: GraphQLString },
     accessLevel: { type: GraphQLInt },
     createdAt: { type: GraphQLString },
+    updatedAt: { type: GraphQLString },
   }),
 });
 
@@ -195,6 +197,11 @@ const query = new GraphQLObjectType({
       resolve() {
         return getAllGroups();
       },
+    },
+    document: {
+      type: DocumentType,
+      args: { id: { type: GraphQLString } },
+      resolve: resolveDocument,
     },
     documents: {
       type: new GraphQLList(DocumentType),

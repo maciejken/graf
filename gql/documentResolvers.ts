@@ -1,17 +1,23 @@
 import {
   addDocument,
   deleteDocument,
+  getDocumentAccessLevel,
+  getDocumentById,
   getUserDocuments,
   updateDocument,
   updateDocumentPermissions,
-} from "../../services/document/documentService.ts";
+} from "../services/document/documentService.ts";
+import {
+  AccessLevel,
+  DocumentWithAccesLevel,
+} from "../services/document/types.ts";
 import {
   Document,
   NewDocument,
   Permission,
-} from "../../services/document/types.ts";
-import { User } from "../../services/user/types.ts";
-import { Context } from "../../types.ts";
+} from "../services/document/types.ts";
+import { User } from "../services/user/types.ts";
+import { Context } from "../types.ts";
 
 export async function resolveUserDocuments(
   viewer: User,
@@ -31,6 +37,21 @@ export async function resolveUserDocuments(
       cursor: node.id,
     })),
   };
+}
+
+export async function resolveDocument(
+  _parentValue: undefined,
+  { id }: Document,
+  context: Context,
+): Promise<DocumentWithAccesLevel | null> {
+  const document: Document | null = await getDocumentById(id);
+  let accessLevel = AccessLevel.None;
+
+  if (document) {
+    accessLevel = await getDocumentAccessLevel(document, context.user);
+  }
+
+  return document && accessLevel ? { ...document, accessLevel } : null;
 }
 
 export async function resolveNewDocument(

@@ -92,24 +92,13 @@ export async function addDocument({
   return newDocument && { ...newDocument, accessLevel: AccessLevel.Delete };
 }
 
-async function getDocumentAccessLevel(
+export async function getDocumentAccessLevel(
   document: Document,
   viewer: User,
 ): Promise<AccessLevel> {
   const userAccessLvl: AccessLevel = viewer.id === document.userId
     ? AccessLevel.Delete
     : document.permissions[viewer.email] || AccessLevel.None;
-
-  if (document.id === "4bce3663-b9c7-4a19-9f7b-28f55b424114") {
-    console.debug("viewer.id:", viewer.id);
-    console.debug("document.userId", document.userId);
-    console.debug(
-      "viewer.id === document.userId",
-      viewer.id === document.userId,
-    );
-  }
-
-  console.debug("document.id", document.id);
 
   const userGroups = await getUserGroups(viewer.id);
   const groupAccessLvl = Math.max(
