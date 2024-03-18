@@ -41,8 +41,10 @@ export async function getUserDocuments(
     d: Document,
   ) => ({
     ...d,
-    accessLevel: d.permissions[user.email] ||
-      (d.userId === user.id ? AccessLevel.Delete : AccessLevel.None),
+    accessLevel: d.userId === user.id
+      ? AccessLevel.Delete
+      : d.permissions[user.email] ||
+        AccessLevel.None,
   }));
 
   docsWithAccessLevels.sort((d1, d2) =>
@@ -97,6 +99,17 @@ async function getDocumentAccessLevel(
   const userAccessLvl: AccessLevel = viewer.id === document.userId
     ? AccessLevel.Delete
     : document.permissions[viewer.email] || AccessLevel.None;
+
+  if (document.id === "4bce3663-b9c7-4a19-9f7b-28f55b424114") {
+    console.debug("viewer.id:", viewer.id);
+    console.debug("document.userId", document.userId);
+    console.debug(
+      "viewer.id === document.userId",
+      viewer.id === document.userId,
+    );
+  }
+
+  console.debug("document.id", document.id);
 
   const userGroups = await getUserGroups(viewer.id);
   const groupAccessLvl = Math.max(

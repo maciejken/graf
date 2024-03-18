@@ -21,18 +21,8 @@ import {
   removeUserFromGroup,
   updateUser,
 } from "../services/user/userService.ts";
-import {
-  Document,
-  NewDocument,
-  Permission,
-} from "../services/document/types.ts";
-import {
-  addDocument,
-  deleteDocument,
-  getGroupDocuments,
-  updateDocument,
-  updateDocumentPermissions,
-} from "../services/document/documentService.ts";
+import { Document } from "../services/document/types.ts";
+import { getGroupDocuments } from "../services/document/documentService.ts";
 import {
   addGroup,
   deleteGroup,
@@ -41,8 +31,15 @@ import {
   updateGroup,
 } from "../services/group/groupService.ts";
 import { Group } from "../services/group/types.ts";
-import { UserData } from "../services/user/types.ts";
+import { User } from "../services/user/types.ts";
 import { addUserToGroup } from "../services/user/userService.ts";
+import {
+  resolveDocumentPermissionsUpdate,
+  resolveDocumentRemoval,
+  resolveDocumentUpdate,
+  resolveNewDocument,
+  resolveUserDocuments,
+} from "./resolvers.ts";
 
 const PageInfoType = new GraphQLObjectType({
   name: "PageInfo",
@@ -83,7 +80,7 @@ function createConnectionType(name: string, nodeType: GraphQLObjectType) {
   return [connectionType, edgeType];
 }
 
-const UserType: GraphQLObjectType = new GraphQLObjectType<UserData>({
+const UserType: GraphQLObjectType = new GraphQLObjectType<User>({
   name: "User",
   fields: () => ({
     id: { type: GraphQLString },
@@ -93,13 +90,13 @@ const UserType: GraphQLObjectType = new GraphQLObjectType<UserData>({
     phone: { type: GraphQLString },
     groups: {
       type: new GraphQLList(GroupType),
-      resolve({ id }: UserData) {
+      resolve({ id }: User) {
         return getUserGroups(id);
       },
     },
     documents: {
       type: new GraphQLList(DocumentType),
-      resolve(user: UserData) {
+      resolve(user: User) {
         return getUserDocuments(user);
       },
     },
@@ -140,7 +137,7 @@ const ViewerType: GraphQLObjectType = new GraphQLObjectType({
     phone: { type: GraphQLString },
     groups: {
       type: new GraphQLList(GroupType),
-      resolve({ id }: UserData) {
+      resolve({ id }: User) {
         return getUserGroups(id);
       },
     },
@@ -150,22 +147,7 @@ const ViewerType: GraphQLObjectType = new GraphQLObjectType({
         first: { type: GraphQLInt },
         after: { type: GraphQLString },
       },
-      async resolve(viewer: UserData, { first, after: afterStr }) {
-        const count = first ?? Infinity;
-        const after = parseInt(afterStr, 10) || 0;
-        const next = count + after;
-        const documents = await getUserDocuments(viewer);
-        return {
-          pageInfo: {
-            hasNextPage: documents.length >= next,
-            endCursor: "" + next,
-          },
-          edges: documents.slice(after, next).map((node) => ({
-            node,
-            cursor: node.id,
-          })),
-        };
-      },
+      resolve: resolveUserDocuments,
     },
   }),
 });
@@ -296,7 +278,7 @@ const mutation = new GraphQLObjectType({
       args: {
         id: { type: new GraphQLNonNull(GraphQLString) },
       },
-      resolve(_parentValue, { id }: UserData) {
+      resolve(_parentValue, { id }: User) {
         return deleteUser(id);
       },
     },
@@ -339,24 +321,7 @@ const mutation = new GraphQLObjectType({
         title: { type: GraphQLString },
         content: { type: new GraphQLNonNull(GraphQLString) },
       },
-      async resolve(
-        _parentValue,
-        { type, title, content }: NewDocument,
-        context: Context,
-      ) {
-        const newDocument = await addDocument({
-          type,
-          title,
-          content,
-          userId: context.user.id,
-        });
-        return {
-          viewer: context.user,
-          documentEdge: {
-            node: newDocument,
-          },
-        };
-      },
+      resolve: resolveNewDocument,
     },
     updateDocument: {
       type: DocumentMutationResponseWithEdgeType,
@@ -366,18 +331,7 @@ const mutation = new GraphQLObjectType({
         title: { type: GraphQLString },
         content: { type: GraphQLString },
       },
-      async resolve(_parentValue, args, context: Context) {
-        const updatedDocument = await updateDocument(args.id, {
-          ...args,
-          viewer: context.user,
-        });
-        return {
-          viewer: context.user,
-          documentEdge: {
-            node: updatedDocument,
-          },
-        };
-      },
+      resolve: resolveDocumentUpdate,
     },
     updateDocumentPermissions: {
       type: DocumentMutationResponseType,
@@ -387,29 +341,14 @@ const mutation = new GraphQLObjectType({
           type: new GraphQLNonNull(new GraphQLList(PermissionType)),
         },
       },
-      async resolve(
-        _parentValue,
-        { id, permissions }: { id: string; permissions: Permission[] },
-        context: Context,
-      ) {
-        await updateDocumentPermissions(id, {
-          permissions,
-          viewer: context.user,
-        });
-        return {
-          viewer: context.user,
-        };
-      },
+      resolve: resolveDocumentPermissionsUpdate,
     },
     deleteDocument: {
       type: DocumentMutationResponseType,
       args: {
         id: { type: new GraphQLNonNull(GraphQLString) },
       },
-      async resolve(_parentValue, { id }: UserData, context: Context) {
-        await deleteDocument(id, context.user);
-        return { viewer: context.user };
-      },
+      resolve: resolveDocumentRemoval,
     },
   },
 });
