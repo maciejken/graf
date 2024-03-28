@@ -5,11 +5,12 @@ export const relyingPartyId = Deno.env.get("RELYING_PARTY_ID");
 export const relyingPartyName = Deno.env.get("RELYING_PARTY_NAME");
 export const expectedOrigin = Deno.env.get("EXPECTED_ORIGIN");
 export const privateKey = Deno.env.get("PRIVATE_KEY");
+export const publicKey = Deno.env.get("PUBLIC_KEY");
 export const registrationTokenExpiresIn = Deno.env.get(
-  "REGISTRATION_TOKEN_EXPIRES_IN",
+  "REGISTRATION_TOKEN_EXPIRES_IN"
 );
 export const authenticationTokenExpiresIn = Deno.env.get(
-  "AUTHENTICATION_TOKEN_EXPIRES_IN",
+  "AUTHENTICATION_TOKEN_EXPIRES_IN"
 );
 export const genericTokenExpiresIn = Deno.env.get("GENERIC_TOKEN_EXPIRES_IN");
 
@@ -29,11 +30,9 @@ export function checkConfig() {
     .filter(({ value }) => !value);
 
   if (emptyValues.length) {
-    const msg = `Some environment variables are undefined: ${
-      emptyValues
-        .map(({ key }) => key)
-        .join(", ")
-    }`;
+    const msg = `Some environment variables are undefined: ${emptyValues
+      .map(({ key }) => key)
+      .join(", ")}`;
     console.error(msg);
   } else {
     console.debug("Environment variables are ok.");
