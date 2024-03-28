@@ -5,6 +5,8 @@ import { NewDocument } from "./types.ts";
 import { DocumentWithAccesLevel } from "./types.ts";
 import { AccessLevel } from "./types.ts";
 import { getUserGroups } from "../group/groupService.ts";
+import { User } from "../user/types.ts";
+import { Group } from "../group/types.ts";
 
 const db = getDatabase();
 
@@ -22,12 +24,13 @@ export async function getDocumentById(id: string): Promise<Document | null> {
 }
 
 export async function getUserDocuments(
-  userId: string,
+  user: User,
 ): Promise<DocumentWithAccesLevel[]> {
   const entries = db.list<Document>({ prefix: [documentsPrefix] });
   const userDocuments = [];
   for await (const { value } of entries) {
-    const isUserDocument = value.userId === userId || value.permissions[userId];
+    const isUserDocument = value.userId === user.id ||
+      value.permissions[user.email];
 
     if (isUserDocument) {
       userDocuments.push(value);
@@ -38,8 +41,10 @@ export async function getUserDocuments(
     d: Document,
   ) => ({
     ...d,
-    accessLevel: d.permissions[userId] ||
-      (d.userId === userId ? AccessLevel.Delete : AccessLevel.None),
+    accessLevel: d.userId === user.id
+      ? AccessLevel.Delete
+      : d.permissions[user.email] ||
+        AccessLevel.None,
   }));
 
   docsWithAccessLevels.sort((d1, d2) =>
@@ -50,18 +55,18 @@ export async function getUserDocuments(
 }
 
 export async function getGroupDocuments(
-  groupId: string,
+  group: Group,
 ): Promise<DocumentWithAccesLevel[]> {
   const entries = db.list<Document>({ prefix: [documentsPrefix] });
   const groupDocuments = [];
   for await (const { value } of entries) {
-    if (value.permissions[groupId]) {
+    if (value.permissions[group.name]) {
       groupDocuments.push(value);
     }
   }
   return groupDocuments.map((d: Document) => ({
     ...d,
-    accessLevel: d.permissions[groupId],
+    accessLevel: d.permissions[group.name],
   }));
 }
 
@@ -87,17 +92,19 @@ export async function addDocument({
   return newDocument && { ...newDocument, accessLevel: AccessLevel.Delete };
 }
 
-async function getDocumentAccessLevel(
+export async function getDocumentAccessLevel(
   document: Document,
-  userId: string,
+  viewer: User,
 ): Promise<AccessLevel> {
-  const userAccessLvl: AccessLevel = userId === document.userId
+  const userAccessLvl: AccessLevel = viewer.id === document.userId
     ? AccessLevel.Delete
-    : document.permissions[userId] || AccessLevel.None;
+    : document.permissions[viewer.email] || AccessLevel.None;
 
-  const userGroups = await getUserGroups(userId);
+  const userGroups = await getUserGroups(viewer.id);
   const groupAccessLvl = Math.max(
-    ...userGroups.map((g) => document?.permissions[g.id] || AccessLevel.None),
+    ...userGroups.map((group) =>
+      document?.permissions[group.name] || AccessLevel.None
+    ),
   );
 
   return Math.max(userAccessLvl, groupAccessLvl);
@@ -109,14 +116,14 @@ export async function updateDocument(
     type,
     title,
     content,
-    contributorId,
-  }: Omit<NewDocument, "userId"> & { contributorId: string },
+    viewer,
+  }: Omit<NewDocument, "userId"> & { viewer: User },
 ): Promise<DocumentWithAccesLevel | null> {
   let doc: Document | null = await getDocumentById(id);
   let accessLevel: AccessLevel = AccessLevel.None;
 
   if (doc) {
-    accessLevel = await getDocumentAccessLevel(doc, contributorId);
+    accessLevel = await getDocumentAccessLevel(doc, viewer);
     accessLevel > AccessLevel.View && await db.set([documentsPrefix, id], {
       id,
       type: type || doc.type,
@@ -136,22 +143,22 @@ export async function updateDocument(
 
 export async function updateDocumentPermissions(
   id: string,
-  { permissions, contributorId }: {
+  { permissions, viewer }: {
     permissions: Permission[];
-    contributorId: string;
+    viewer: User;
   },
 ): Promise<DocumentWithAccesLevel | null> {
   let doc: Document | null = await getDocumentById(id);
   let accessLevel: AccessLevel = AccessLevel.None;
 
   if (doc) {
-    accessLevel = await getDocumentAccessLevel(doc, contributorId);
+    accessLevel = await getDocumentAccessLevel(doc, viewer);
     accessLevel > AccessLevel.Update && await db.set([documentsPrefix, id], {
       ...doc,
       permissions: {
         ...doc.permissions,
         ...Object.fromEntries(
-          permissions.map(({ id, value }: Permission) => [id, value]),
+          permissions.map(({ key, value }: Permission) => [key, value]),
         ),
       },
       updatedAt: new Date().toISOString(),
@@ -165,12 +172,12 @@ export async function updateDocumentPermissions(
 
 export async function deleteDocument(
   id: string,
-  userId: string,
+  viewer: User,
 ): Promise<Document | null> {
   const doc: Document | null = await getDocumentById(id);
 
   if (doc) {
-    const accessLevel = await getDocumentAccessLevel(doc, userId);
+    const accessLevel = await getDocumentAccessLevel(doc, viewer);
     accessLevel === AccessLevel.Delete &&
       await db.delete([documentsPrefix, id]);
   }

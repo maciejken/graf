@@ -1,7 +1,7 @@
 import { groupsPrefix } from "../../constants.ts";
 import { Group } from "./types.ts";
 import { getDatabase } from "../dbService.ts";
-import { UserData } from "../user/types.ts";
+import { User, UserData } from "../user/types.ts";
 import { getUserById } from "../user/userService.ts";
 
 const db = getDatabase();
@@ -15,7 +15,7 @@ export async function getAllGroups(): Promise<Group[]> {
   return groups;
 }
 
-export async function getGroups(ids: string[]): Promise<Group[]> {
+export async function getGroups(ids: string[] = []): Promise<Group[]> {
   const entries = db.list<Group>({ prefix: [groupsPrefix] });
   const groups: Group[] = [];
   for await (const { value } of entries) {
@@ -86,11 +86,11 @@ export async function addGroup(
 
 export async function updateGroup(
   id: string,
-  { name, adminIds, currentUserId }: Group & { currentUserId: string },
+  { name, adminIds, viewer }: Group & { viewer: User },
 ): Promise<Group | null> {
   let group: Group | null = await getGroupById(id);
 
-  if (group && group.adminIds.includes(currentUserId)) {
+  if (group && group.adminIds.includes(viewer.id)) {
     await db.set([groupsPrefix, id], {
       id,
       name: name || group.name,
@@ -107,11 +107,11 @@ export async function updateGroup(
 
 export async function deleteGroup(
   id: string,
-  currentUserId: string,
+  viewer: User,
 ): Promise<Group | null> {
   const group: Group | null = await getGroupById(id);
 
-  if (group && group.adminIds.includes(currentUserId)) {
+  if (group && group.adminIds.includes(viewer.id)) {
     await db.delete([groupsPrefix, id]);
   }
 

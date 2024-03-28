@@ -1,7 +1,7 @@
 import { Context } from "../types.ts";
 
 export const rootValue = {
-  viewer: (_args: any, context: Context) => {
+  viewer: (_args: undefined, context: Context) => {
     const { id, firstName, lastName, email, phone, groupIds } = context.user;
     return {
       id,
@@ -13,3 +13,5 @@ export const rootValue = {
     };
   },
 };
+
+export * from "./documentResolvers.ts";
