@@ -1,4 +1,3 @@
-import { isoBase64URL } from "isoBase64URL";
 import {
   expectedOrigin,
   relyingPartyId,
@@ -31,7 +30,7 @@ import {
 import jwt from "jsonwebtoken";
 import { SignOptions, JwtPayload } from "jsonwebtoken";
 import { getUserById } from "../user/userService.ts";
-import { getPrivateKey } from "../secretService.ts";
+import { arrayBufferToBase64String, getPrivateKey } from "../secretService.ts";
 
 const db = getDatabase();
 
@@ -243,7 +242,7 @@ export async function createNewAuthenticator(
     );
   }
 
-  const authenticatorId: string = isoBase64URL.fromBuffer(credentialID);
+  const authenticatorId: string = arrayBufferToBase64String(credentialID);
   const newAuthenticator: Authenticator = {
     credentialID,
     credentialType,

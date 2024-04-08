@@ -20,13 +20,6 @@ const signAlgorithm = {
   publicExponent: new Uint8Array([1, 0, 1]),
 };
 
-// const algorithm = {
-//   name: "RSA-OAEP",
-//   modulusLength: 4096, // RSA key size
-//   publicExponent: new Uint8Array([0x01, 0x00, 0x01]), // RSA public exponent
-//   hash: { name: "SHA-512" }, // Hash algorithm
-// };
-
 export function arrayBufferToBase64String(arrayBuffer: ArrayBuffer) {
   const bytes = new Uint8Array(arrayBuffer);
   const chars: string[] = new Array(bytes.length);
@@ -84,18 +77,22 @@ function convertPemToBinary(pem: string, del = "\n") {
   return base64StringToArrayBuffer(encoded);
 }
 
-function convertBinaryToPem(privateKey: ArrayBuffer, label: string, del = "") {
-  const bytes = new Uint8Array(privateKey);
-  const b64 = arrayBufferToBase64String(bytes);
+export function convertBase64ToPem(line: string, label: string, del = "\n") {
   const lines: string[] = [];
   let index = 0;
-  while (index < b64.length) {
-    lines.push(b64.slice(index, index + 64));
+  while (index < line.length) {
+    lines.push(line.slice(index, index + 64));
     index += 64;
   }
   return `-----BEGIN ${label}-----${del}${lines.join(
     del
   )}${del}-----END ${label}-----`;
+}
+
+function convertBinaryToPem(privateKey: ArrayBuffer, label: string, del = "") {
+  const bytes = new Uint8Array(privateKey);
+  const b64 = arrayBufferToBase64String(bytes);
+  return convertBase64ToPem(b64, label, del);
 }
 
 export function generateKey(
@@ -139,18 +136,26 @@ export async function exportPublicKey(publicKey: CryptoKey) {
   return convertBinaryToPem(spki, "RSA PUBLIC KEY", "\n");
 }
 
-export function encryptData(key: CryptoKey, data: string) {
+export function encryptData(data: string, key: CryptoKey) {
   return crypto.subtle.encrypt(
     {
       name: "RSA-OAEP",
-      // iv: vector
     },
     key,
     textToArrayBuffer(data)
   );
 }
 
-export function decryptData(key: CryptoKey, data: ArrayBuffer) {
+export async function encrypt(data: string, publicKey: string) {
+  const publicKeyBuffer = await importPublicKey(publicKey);
+  const encryptedDataBuffer = await encryptData(data, publicKeyBuffer);
+  return arrayBufferToBase64String(encryptedDataBuffer);
+}
+
+export function decryptData(
+  data: ArrayBuffer,
+  key: CryptoKey
+): Promise<ArrayBuffer> {
   return crypto.subtle.decrypt(
     {
       name: "RSA-OAEP",
@@ -159,6 +164,17 @@ export function decryptData(key: CryptoKey, data: ArrayBuffer) {
     key,
     data
   );
+}
+
+export async function decrypt(data: string, privateKey: string) {
+  const dataBuffer: ArrayBuffer = base64StringToArrayBuffer(data);
+  const privateKeyBuffer: CryptoKey = await importPrivateKey(privateKey);
+  const decryptedBuffer: ArrayBuffer = await decryptData(
+    dataBuffer,
+    privateKeyBuffer
+  );
+  const decryptedBase64: string = arrayBufferToBase64String(decryptedBuffer);
+  return decodeURIComponent(atob(decryptedBase64));
 }
 
 // @TODO: store encrypted key in db, and salt/passphrase as env variable
