@@ -1,3 +1,4 @@
+import { FromBerResult, fromBER } from "asn1js";
 import { privateKey } from "../config.ts";
 
 const encryptAlgorithm = {
@@ -10,15 +11,17 @@ const encryptAlgorithm = {
   },
 };
 
-const signAlgorithm = {
-  name: "RSASSA-PKCS1-v1_5",
-  hash: {
-    name: "SHA-256",
-  },
-  modulusLength: 2048,
-  extractable: false,
-  publicExponent: new Uint8Array([1, 0, 1]),
-};
+// const signAlgorithm = {
+//   name: "RSASSA-PKCS1-v1_5",
+//   hash: {
+//     name: "SHA-256",
+//   },
+//   modulusLength: 2048,
+//   extractable: false,
+//   publicExponent: new Uint8Array([1, 0, 1]),
+// };
+
+const rsaOaepAlg = { name: "RSA-OAEP", hash: "SHA-256" };
 
 export function arrayBufferToBase64String(arrayBuffer: ArrayBuffer) {
   const bytes = new Uint8Array(arrayBuffer);
@@ -53,30 +56,6 @@ function textToArrayBuffer(text: string) {
   return bufView;
 }
 
-function checkBase64(line: string) {
-  return (
-    line.trim().length > 0 &&
-    line.indexOf("-BEGIN OPENSSH PRIVATE KEY-") < 0 &&
-    line.indexOf("-END OPENSSH PRIVATE KEY-") < 0 &&
-    line.indexOf("-BEGIN RSA PRIVATE KEY-") < 0 &&
-    line.indexOf("-BEGIN RSA PUBLIC KEY-") < 0 &&
-    line.indexOf("-END RSA PRIVATE KEY-") < 0 &&
-    line.indexOf("-END RSA PUBLIC KEY-") < 0
-  );
-}
-
-function convertPemToBinary(pem: string, del = "\n") {
-  const lines = pem.split(del);
-  let encoded = "";
-  for (const line of lines) {
-    const valid: boolean = checkBase64(line);
-    if (valid) {
-      encoded += line.trim();
-    }
-  }
-  return base64StringToArrayBuffer(encoded);
-}
-
 export function convertBase64ToPem(line: string, label: string, del = "\n") {
   const lines: string[] = [];
   let index = 0;
@@ -106,12 +85,45 @@ export function generateSigningKey() {
   return generateKey(encryptAlgorithm, ["encrypt", "decrypt"]);
 }
 
+function b64tob64u(s: string) {
+  return s.replace(/\=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+}
+
 export function importPrivateKey(pemKey: string): Promise<CryptoKey> {
+  const privateKeyBinary = base64StringToArrayBuffer(pemKey);
+  const privateKeySequence = fromBER(privateKeyBinary);
+  const [
+    _version,
+    modulus,
+    publicExponent,
+    privateExponent,
+    prime1,
+    prime2,
+    exponent1,
+    exponent2,
+    coefficient,
+    // @ts-ignore privateKeySequence.valueBlock.value exists!
+  ] = privateKeySequence.result.valueBlock.value;
+
   return crypto.subtle.importKey(
-    "pkcs8",
-    convertPemToBinary(pemKey),
-    encryptAlgorithm,
-    true,
+    "jwk",
+    {
+      kty: "RSA",
+      n: b64tob64u(arrayBufferToBase64String(modulus.valueBlock.valueHex)),
+      e: b64tob64u(
+        arrayBufferToBase64String(publicExponent.valueBlock.valueHex)
+      ),
+      d: b64tob64u(
+        arrayBufferToBase64String(privateExponent.valueBlock.valueHex)
+      ),
+      p: b64tob64u(arrayBufferToBase64String(prime1.valueBlock.valueHex)),
+      q: b64tob64u(arrayBufferToBase64String(prime2.valueBlock.valueHex)),
+      dp: b64tob64u(arrayBufferToBase64String(exponent1.valueBlock.valueHex)),
+      dq: b64tob64u(arrayBufferToBase64String(exponent2.valueBlock.valueHex)),
+      qi: b64tob64u(arrayBufferToBase64String(coefficient.valueBlock.valueHex)),
+    },
+    rsaOaepAlg,
+    false,
     ["decrypt"]
   );
 }
@@ -122,11 +134,24 @@ export async function exportPrivateKey(privateKey: CryptoKey) {
 }
 
 export function importPublicKey(pemKey: string): Promise<CryptoKey> {
+  const publicKeyBinary = base64StringToArrayBuffer(pemKey);
+  const publicKeySequence: FromBerResult = fromBER(publicKeyBinary);
+  const modulus =
+    // @ts-ignore result.valueBlock.value exists!
+    publicKeySequence.result.valueBlock.value[0].valueBlock.valueHex;
+  const exponent =
+    // @ts-ignore result.valueBlock.value exists!
+    publicKeySequence.result.valueBlock.value[1].valueBlock.valueHex;
+
   return crypto.subtle.importKey(
-    "spki",
-    convertPemToBinary(pemKey),
-    encryptAlgorithm,
-    true,
+    "jwk",
+    {
+      kty: "RSA",
+      e: b64tob64u(arrayBufferToBase64String(exponent)),
+      n: b64tob64u(arrayBufferToBase64String(modulus)),
+    },
+    rsaOaepAlg,
+    false,
     ["encrypt"]
   );
 }
