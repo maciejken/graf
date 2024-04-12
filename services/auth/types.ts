@@ -1,7 +1,7 @@
 import {
   AuthenticatorTransportFuture,
   CredentialDeviceType,
-} from "https://deno.land/x/simplewebauthn@v9.0.0/deno/types.ts";
+} from "@simplewebauthn/types";
 
 export interface Credentials {
   id: string;

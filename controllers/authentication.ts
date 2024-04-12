@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { PublicKeyCredentialRequestOptionsJSON } from "https://deno.land/x/simplewebauthn@v9.0.0/deno/types.ts";
+import { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/types";
 import {
   getAuthenticationOptions,
   getAuthenticationToken,
@@ -27,8 +27,6 @@ export async function getAuthInfo(req: Request, res: Response) {
   }
 
   if (token && publicKey) {
-    console.debug("public key:", publicKey);
-
     try {
       encryptedToken = await encrypt(token, publicKey);
     } catch (e) {
