@@ -5,3 +5,11 @@ export const authenticatorsPrefix = "authenticators";
 export const documentsPrefix = "documents";
 export const applicationsPrefix = "applications";
 export const companiesPrefix = "companies";
+
+export const collections = [
+  usersPrefix,
+  groupsPrefix,
+  credentialsPrefix,
+  authenticatorsPrefix,
+  documentsPrefix,
+];
