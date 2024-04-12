@@ -77,7 +77,6 @@ app.use(
 );
 
 const prefix = envName === "dev" ? "http://" : "https://";
-app.listen(port, async () => {
+app.listen(port, () => {
   console.log(`Listening at ${prefix}${host}:${port}`);
-  await clearDatabase();
 });
