@@ -11,7 +11,7 @@
         "PORT": "4000",
         "EXPECTED_ORIGIN": "http://localhost:8000",
         "RELYING_PARTY_ID": "localhost",
-        "RELYING_PARTY_NAME": "Graf",
+        "RELYING_PARTY_NAME": "Fasolki Web",
         "GENERIC_TOKEN_EXPIRES_IN": "1y",
         "REGISTRATION_TOKEN_EXPIRES_IN": "1h",
         "AUTHENTICATION_TOKEN_EXPIRES_IN": "1y",
