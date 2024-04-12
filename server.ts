@@ -22,6 +22,7 @@ import { checkUsernameAvailable } from "./middleware/checkUsernameAvailable.ts";
 import { verifyAuthenticationScopeToken } from "./middleware/verifyAuthenticationScopeToken.ts";
 import { verifyGenericScopeToken } from "./middleware/verifyGenericScopeToken.ts";
 import { rootValue } from "./gql/resolvers.ts";
+import { clearDatabase } from "./services/dbService.ts";
 
 const app = express();
 
@@ -76,6 +77,7 @@ app.use(
 );
 
 const prefix = envName === "dev" ? "http://" : "https://";
-app.listen(port, () => {
+app.listen(port, async () => {
   console.log(`Listening at ${prefix}${host}:${port}`);
+  await clearDatabase();
 });
