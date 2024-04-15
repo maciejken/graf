@@ -1,6 +1,10 @@
 import { FromBerResult, fromBER } from "asn1js";
 import { privateKey } from "../config.ts";
-import base64toBase64URL from "../utils/base64toBase64URL.ts";
+import {
+  arrayBufferToBase64,
+  arrayBufferToBase64Url,
+  base64ToArrayBuffer,
+} from "../utils/base64.ts";
 
 const encryptAlgorithm = {
   name: "RSA-OAEP",
@@ -23,30 +27,6 @@ const encryptAlgorithm = {
 // };
 
 const rsaOaepAlg = { name: "RSA-OAEP", hash: "SHA-256" };
-
-export function arrayBufferToBase64String(arrayBuffer: ArrayBuffer) {
-  const bytes = new Uint8Array(arrayBuffer);
-  const chars: string[] = new Array(bytes.length);
-
-  for (let i = 0; i < bytes.length; i++) {
-    chars[i] = String.fromCharCode(bytes[i]);
-  }
-
-  return btoa(chars.join(""));
-}
-
-export function base64StringToArrayBuffer(base64String: string) {
-  const codes: number[] = atob(base64String)
-    .split("")
-    .map((char) => char.charCodeAt(0));
-
-  const bytes = new Uint8Array(codes.length);
-
-  for (let i = 0; i < codes.length; i++) {
-    bytes[i] = codes[i];
-  }
-  return bytes.buffer;
-}
 
 function textToArrayBuffer(text: string) {
   const buf = decodeURI(encodeURIComponent(text)); // 2 bytes for each char
@@ -71,7 +51,7 @@ export function convertBase64ToPem(line: string, label: string, del = "\n") {
 
 function convertBinaryToPem(privateKey: ArrayBuffer, label: string, del = "") {
   const bytes = new Uint8Array(privateKey);
-  const b64 = arrayBufferToBase64String(bytes);
+  const b64 = arrayBufferToBase64(bytes);
   return convertBase64ToPem(b64, label, del);
 }
 
@@ -87,7 +67,7 @@ export function generateSigningKey() {
 }
 
 export function importPrivateKey(pemKey: string): Promise<CryptoKey> {
-  const privateKeyBinary = base64StringToArrayBuffer(pemKey);
+  const privateKeyBinary = base64ToArrayBuffer(pemKey);
   const privateKeySequence = fromBER(privateKeyBinary);
   const [
     _version,
@@ -106,30 +86,14 @@ export function importPrivateKey(pemKey: string): Promise<CryptoKey> {
     "jwk",
     {
       kty: "RSA",
-      n: base64toBase64URL(
-        arrayBufferToBase64String(modulus.valueBlock.valueHex)
-      ),
-      e: base64toBase64URL(
-        arrayBufferToBase64String(publicExponent.valueBlock.valueHex)
-      ),
-      d: base64toBase64URL(
-        arrayBufferToBase64String(privateExponent.valueBlock.valueHex)
-      ),
-      p: base64toBase64URL(
-        arrayBufferToBase64String(prime1.valueBlock.valueHex)
-      ),
-      q: base64toBase64URL(
-        arrayBufferToBase64String(prime2.valueBlock.valueHex)
-      ),
-      dp: base64toBase64URL(
-        arrayBufferToBase64String(exponent1.valueBlock.valueHex)
-      ),
-      dq: base64toBase64URL(
-        arrayBufferToBase64String(exponent2.valueBlock.valueHex)
-      ),
-      qi: base64toBase64URL(
-        arrayBufferToBase64String(coefficient.valueBlock.valueHex)
-      ),
+      n: arrayBufferToBase64Url(modulus.valueBlock.valueHex),
+      e: arrayBufferToBase64Url(publicExponent.valueBlock.valueHex),
+      d: arrayBufferToBase64Url(privateExponent.valueBlock.valueHex),
+      p: arrayBufferToBase64Url(prime1.valueBlock.valueHex),
+      q: arrayBufferToBase64Url(prime2.valueBlock.valueHex),
+      dp: arrayBufferToBase64Url(exponent1.valueBlock.valueHex),
+      dq: arrayBufferToBase64Url(exponent2.valueBlock.valueHex),
+      qi: arrayBufferToBase64Url(coefficient.valueBlock.valueHex),
     },
     rsaOaepAlg,
     false,
@@ -143,7 +107,7 @@ export async function exportPrivateKey(privateKey: CryptoKey) {
 }
 
 export function importPublicKey(pemKey: string): Promise<CryptoKey> {
-  const publicKeyBinary = base64StringToArrayBuffer(pemKey);
+  const publicKeyBinary = base64ToArrayBuffer(pemKey);
   const publicKeySequence: FromBerResult = fromBER(publicKeyBinary);
   const modulus =
     // @ts-ignore result.valueBlock.value exists!
@@ -156,8 +120,8 @@ export function importPublicKey(pemKey: string): Promise<CryptoKey> {
     "jwk",
     {
       kty: "RSA",
-      e: base64toBase64URL(arrayBufferToBase64String(exponent)),
-      n: base64toBase64URL(arrayBufferToBase64String(modulus)),
+      e: arrayBufferToBase64Url(exponent),
+      n: arrayBufferToBase64Url(modulus),
     },
     rsaOaepAlg,
     false,
@@ -183,13 +147,10 @@ export function encryptData(data: string, key: CryptoKey) {
 export async function encrypt(data: string, publicKey: string) {
   const publicKeyBuffer = await importPublicKey(publicKey);
   const encryptedDataBuffer = await encryptData(data, publicKeyBuffer);
-  return arrayBufferToBase64String(encryptedDataBuffer);
+  return arrayBufferToBase64(encryptedDataBuffer);
 }
 
-export function decryptData(
-  data: ArrayBuffer,
-  key: CryptoKey
-): Promise<ArrayBuffer> {
+function decryptData(data: ArrayBuffer, key: CryptoKey): Promise<ArrayBuffer> {
   return crypto.subtle.decrypt(
     {
       name: "RSA-OAEP",
@@ -201,13 +162,13 @@ export function decryptData(
 }
 
 export async function decrypt(data: string, privateKey: string) {
-  const dataBuffer: ArrayBuffer = base64StringToArrayBuffer(data);
+  const dataBuffer: ArrayBuffer = base64ToArrayBuffer(data);
   const privateKeyBuffer: CryptoKey = await importPrivateKey(privateKey);
   const decryptedBuffer: ArrayBuffer = await decryptData(
     dataBuffer,
     privateKeyBuffer
   );
-  const decryptedBase64: string = arrayBufferToBase64String(decryptedBuffer);
+  const decryptedBase64: string = arrayBufferToBase64(decryptedBuffer);
   return decodeURIComponent(atob(decryptedBase64));
 }
 
