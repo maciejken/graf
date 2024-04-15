@@ -31,7 +31,8 @@ import {
 import jwt from "jsonwebtoken";
 import { SignOptions, JwtPayload } from "jsonwebtoken";
 import { getUserById } from "../user/userService.ts";
-import { getPrivateKey } from "../secretService.ts";
+import { arrayBufferToBase64String, getPrivateKey } from "../secretService.ts";
+import base64toBase64URL from "../../utils/base64toBase64URL.ts";
 
 const db = getDatabase();
 
@@ -243,7 +244,10 @@ export async function createNewAuthenticator(
     );
   }
 
-  const authenticatorId: string = isoBase64URL.fromBuffer(credentialID);
+  const authenticatorId: string = base64toBase64URL(
+    arrayBufferToBase64String(credentialID)
+  );
+
   const newAuthenticator: Authenticator = {
     credentialID,
     credentialType,

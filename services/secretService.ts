@@ -1,6 +1,7 @@
 // import { isoBase64URL } from "isoBase64URL";
 
 import { privateKey } from "../config.ts";
+import base64toBase64URL from "../utils/base64toBase64URL.ts";
 
 // const algorithm = {
 //   name: "RSA-OAEP",
@@ -9,11 +10,194 @@ import { privateKey } from "../config.ts";
 //   hash: { name: "SHA-512" }, // Hash algorithm
 // };
 
-// const keyPair: CryptoKeyPair = await crypto.subtle.generateKey(
-//   algorithm,
-//   true,
-//   ["encrypt", "decrypt"]
-// );
+const rsaOaepAlg = { name: "RSA-OAEP", hash: "SHA-256" };
+
+export function arrayBufferToBase64String(arrayBuffer: ArrayBuffer) {
+  const bytes = new Uint8Array(arrayBuffer);
+  const chars: string[] = new Array(bytes.length);
+
+  for (let i = 0; i < bytes.length; i++) {
+    chars[i] = String.fromCharCode(bytes[i]);
+  }
+
+  return btoa(chars.join(""));
+}
+
+export function base64StringToArrayBuffer(base64String: string) {
+  const codes: number[] = atob(base64String)
+    .split("")
+    .map((char) => char.charCodeAt(0));
+
+  const bytes = new Uint8Array(codes.length);
+
+  for (let i = 0; i < codes.length; i++) {
+    bytes[i] = codes[i];
+  }
+  return bytes.buffer;
+}
+
+function textToArrayBuffer(text: string) {
+  const buf = decodeURI(encodeURIComponent(text)); // 2 bytes for each char
+  const bufView = new Uint8Array(buf.length);
+  for (let i = 0; i < buf.length; i++) {
+    bufView[i] = buf.charCodeAt(i);
+  }
+  return bufView;
+}
+
+export function convertBase64ToPem(line: string, label: string, del = "\n") {
+  const lines: string[] = [];
+  let index = 0;
+  while (index < line.length) {
+    lines.push(line.slice(index, index + 64));
+    index += 64;
+  }
+  return `-----BEGIN ${label}-----${del}${lines.join(
+    del
+  )}${del}-----END ${label}-----`;
+}
+
+function convertBinaryToPem(privateKey: ArrayBuffer, label: string, del = "") {
+  const bytes = new Uint8Array(privateKey);
+  const b64 = arrayBufferToBase64String(bytes);
+  return convertBase64ToPem(b64, label, del);
+}
+
+export function generateKey(
+  alg: RsaHashedKeyGenParams | EcKeyGenParams,
+  scope: KeyUsage[]
+) {
+  return crypto.subtle.generateKey(alg, true, scope);
+}
+
+export function generateSigningKey() {
+  return generateKey(encryptAlgorithm, ["encrypt", "decrypt"]);
+}
+
+export function importPrivateKey(pemKey: string): Promise<CryptoKey> {
+  const privateKeyBinary = base64StringToArrayBuffer(pemKey);
+  const privateKeySequence = fromBER(privateKeyBinary);
+  const [
+    _version,
+    modulus,
+    publicExponent,
+    privateExponent,
+    prime1,
+    prime2,
+    exponent1,
+    exponent2,
+    coefficient,
+    // @ts-ignore privateKeySequence.valueBlock.value exists!
+  ] = privateKeySequence.result.valueBlock.value;
+
+  return crypto.subtle.importKey(
+    "jwk",
+    {
+      kty: "RSA",
+      n: base64toBase64URL(
+        arrayBufferToBase64String(modulus.valueBlock.valueHex)
+      ),
+      e: base64toBase64URL(
+        arrayBufferToBase64String(publicExponent.valueBlock.valueHex)
+      ),
+      d: base64toBase64URL(
+        arrayBufferToBase64String(privateExponent.valueBlock.valueHex)
+      ),
+      p: base64toBase64URL(
+        arrayBufferToBase64String(prime1.valueBlock.valueHex)
+      ),
+      q: base64toBase64URL(
+        arrayBufferToBase64String(prime2.valueBlock.valueHex)
+      ),
+      dp: base64toBase64URL(
+        arrayBufferToBase64String(exponent1.valueBlock.valueHex)
+      ),
+      dq: base64toBase64URL(
+        arrayBufferToBase64String(exponent2.valueBlock.valueHex)
+      ),
+      qi: base64toBase64URL(
+        arrayBufferToBase64String(coefficient.valueBlock.valueHex)
+      ),
+    },
+    rsaOaepAlg,
+    false,
+    ["decrypt"]
+  );
+}
+
+export async function exportPrivateKey(privateKey: CryptoKey) {
+  const pkcs8: ArrayBuffer = await crypto.subtle.exportKey("pkcs8", privateKey);
+  return convertBinaryToPem(pkcs8, "RSA PRIVATE KEY", "\n");
+}
+
+export function importPublicKey(pemKey: string): Promise<CryptoKey> {
+  const publicKeyBinary = base64StringToArrayBuffer(pemKey);
+  const publicKeySequence: FromBerResult = fromBER(publicKeyBinary);
+  const modulus =
+    // @ts-ignore result.valueBlock.value exists!
+    publicKeySequence.result.valueBlock.value[0].valueBlock.valueHex;
+  const exponent =
+    // @ts-ignore result.valueBlock.value exists!
+    publicKeySequence.result.valueBlock.value[1].valueBlock.valueHex;
+
+  return crypto.subtle.importKey(
+    "jwk",
+    {
+      kty: "RSA",
+      e: base64toBase64URL(arrayBufferToBase64String(exponent)),
+      n: base64toBase64URL(arrayBufferToBase64String(modulus)),
+    },
+    rsaOaepAlg,
+    false,
+    ["encrypt"]
+  );
+}
+
+export async function exportPublicKey(publicKey: CryptoKey) {
+  const spki: ArrayBuffer = await crypto.subtle.exportKey("spki", publicKey);
+  return convertBinaryToPem(spki, "RSA PUBLIC KEY", "\n");
+}
+
+export function encryptData(data: string, key: CryptoKey) {
+  return crypto.subtle.encrypt(
+    {
+      name: "RSA-OAEP",
+    },
+    key,
+    textToArrayBuffer(data)
+  );
+}
+
+export async function encrypt(data: string, publicKey: string) {
+  const publicKeyBuffer = await importPublicKey(publicKey);
+  const encryptedDataBuffer = await encryptData(data, publicKeyBuffer);
+  return arrayBufferToBase64String(encryptedDataBuffer);
+}
+
+export function decryptData(
+  data: ArrayBuffer,
+  key: CryptoKey
+): Promise<ArrayBuffer> {
+  return crypto.subtle.decrypt(
+    {
+      name: "RSA-OAEP",
+      // iv: vector
+    },
+    key,
+    data
+  );
+}
+
+export async function decrypt(data: string, privateKey: string) {
+  const dataBuffer: ArrayBuffer = base64StringToArrayBuffer(data);
+  const privateKeyBuffer: CryptoKey = await importPrivateKey(privateKey);
+  const decryptedBuffer: ArrayBuffer = await decryptData(
+    dataBuffer,
+    privateKeyBuffer
+  );
+  const decryptedBase64: string = arrayBufferToBase64String(decryptedBuffer);
+  return decodeURIComponent(atob(decryptedBase64));
+}
 
 // @TODO: store encrypted key in db, and salt/passphrase as env variable
 export async function getPrivateKey() {
