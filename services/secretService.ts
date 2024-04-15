@@ -1,5 +1,6 @@
 import { FromBerResult, fromBER } from "asn1js";
 import { privateKey } from "../config.ts";
+import base64toBase64URL from "../utils/base64toBase64URL.ts";
 
 const encryptAlgorithm = {
   name: "RSA-OAEP",
@@ -85,10 +86,6 @@ export function generateSigningKey() {
   return generateKey(encryptAlgorithm, ["encrypt", "decrypt"]);
 }
 
-function b64tob64u(s: string) {
-  return s.replace(/\=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-}
-
 export function importPrivateKey(pemKey: string): Promise<CryptoKey> {
   const privateKeyBinary = base64StringToArrayBuffer(pemKey);
   const privateKeySequence = fromBER(privateKeyBinary);
@@ -109,18 +106,30 @@ export function importPrivateKey(pemKey: string): Promise<CryptoKey> {
     "jwk",
     {
       kty: "RSA",
-      n: b64tob64u(arrayBufferToBase64String(modulus.valueBlock.valueHex)),
-      e: b64tob64u(
+      n: base64toBase64URL(
+        arrayBufferToBase64String(modulus.valueBlock.valueHex)
+      ),
+      e: base64toBase64URL(
         arrayBufferToBase64String(publicExponent.valueBlock.valueHex)
       ),
-      d: b64tob64u(
+      d: base64toBase64URL(
         arrayBufferToBase64String(privateExponent.valueBlock.valueHex)
       ),
-      p: b64tob64u(arrayBufferToBase64String(prime1.valueBlock.valueHex)),
-      q: b64tob64u(arrayBufferToBase64String(prime2.valueBlock.valueHex)),
-      dp: b64tob64u(arrayBufferToBase64String(exponent1.valueBlock.valueHex)),
-      dq: b64tob64u(arrayBufferToBase64String(exponent2.valueBlock.valueHex)),
-      qi: b64tob64u(arrayBufferToBase64String(coefficient.valueBlock.valueHex)),
+      p: base64toBase64URL(
+        arrayBufferToBase64String(prime1.valueBlock.valueHex)
+      ),
+      q: base64toBase64URL(
+        arrayBufferToBase64String(prime2.valueBlock.valueHex)
+      ),
+      dp: base64toBase64URL(
+        arrayBufferToBase64String(exponent1.valueBlock.valueHex)
+      ),
+      dq: base64toBase64URL(
+        arrayBufferToBase64String(exponent2.valueBlock.valueHex)
+      ),
+      qi: base64toBase64URL(
+        arrayBufferToBase64String(coefficient.valueBlock.valueHex)
+      ),
     },
     rsaOaepAlg,
     false,
@@ -147,8 +156,8 @@ export function importPublicKey(pemKey: string): Promise<CryptoKey> {
     "jwk",
     {
       kty: "RSA",
-      e: b64tob64u(arrayBufferToBase64String(exponent)),
-      n: b64tob64u(arrayBufferToBase64String(modulus)),
+      e: base64toBase64URL(arrayBufferToBase64String(exponent)),
+      n: base64toBase64URL(arrayBufferToBase64String(modulus)),
     },
     rsaOaepAlg,
     false,
