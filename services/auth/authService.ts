@@ -1,4 +1,3 @@
-import { isoBase64URL } from "isoBase64URL";
 import {
   expectedOrigin,
   relyingPartyId,

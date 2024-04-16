@@ -3,6 +3,7 @@
   "packages": {
     "specifiers": {
       "npm:@types/jsonwebtoken": "npm:@types/jsonwebtoken@9.0.5",
+      "npm:asn1js": "npm:asn1js@3.0.5",
       "npm:cors@2": "npm:cors@2.8.5",
       "npm:express@4": "npm:express@4.18.2",
       "npm:graphql": "npm:graphql@16.8.1",
@@ -30,6 +31,14 @@
       "array-flatten@1.1.1": {
         "integrity": "sha512-PCVAQswWemu6UdxsDFFX/+gVeYqKAod3D3UVm91jHwynguOwAvYPhx8nNlM++NqRcK6CxxpUafjmhIdKiHibqg==",
         "dependencies": {}
+      },
+      "asn1js@3.0.5": {
+        "integrity": "sha512-FVnvrKJwpt9LP2lAMl8qZswRNm3T4q9CON+bxldk2iwk3FFpuwhx2FfinyitizWHsVYyaY+y5JzDR0rCMV5yTQ==",
+        "dependencies": {
+          "pvtsutils": "pvtsutils@1.3.5",
+          "pvutils": "pvutils@1.1.3",
+          "tslib": "tslib@2.6.2"
+        }
       },
       "body-parser@1.20.1": {
         "integrity": "sha512-jWi7abTbYwajOytWCQc37VulmWiRae5RyTpaCyDcS5/lMdtwSz5lOpDE67srw/HYe35f1z3fDQw+3txg7gNtWw==",
@@ -393,6 +402,16 @@
           "ipaddr.js": "ipaddr.js@1.9.1"
         }
       },
+      "pvtsutils@1.3.5": {
+        "integrity": "sha512-ARvb14YB9Nm2Xi6nBq1ZX6dAM0FsJnuk+31aUp4TrcZEdKUlSqOqsxJHUPJDNE3qiIp+iUPEIeR6Je/tgV7zsA==",
+        "dependencies": {
+          "tslib": "tslib@2.6.2"
+        }
+      },
+      "pvutils@1.1.3": {
+        "integrity": "sha512-pMpnA0qRdFp32b1sJl1wOJNxZLQ2cbQx+k6tjNtZ8CpvVhNqEPRgivZ2WOUev2YMajecdH7ctUPDvEe87nariQ==",
+        "dependencies": {}
+      },
       "qs@6.11.0": {
         "integrity": "sha512-MvjoMCJwEarSbUYk5O+nmoSzSutSsTwF85zcHPQ9OrlFoZOYIjaqBAJIqIXjptyD5vThxGq52Xu/MaJzRkIk4Q==",
         "dependencies": {
@@ -480,6 +499,10 @@
       },
       "toidentifier@1.0.1": {
         "integrity": "sha512-o5sSPKEkg/DIQNmH43V0/uerLrpzVedkUh8tGNvaeXpfpuwjKenlSox/2O/BTlZUtEe+JG7s5YhEz608PlAHRA==",
+        "dependencies": {}
+      },
+      "tslib@2.6.2": {
+        "integrity": "sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==",
         "dependencies": {}
       },
       "type-is@1.6.18": {
@@ -668,12 +691,5 @@
     "https://esm.sh/v135/pvtsutils@1.3.5/denonext/pvtsutils.mjs": "016782b990e2652a326cf1d8984c2adc4552171da902cc73dc8e12ffdbe3a100",
     "https://esm.sh/v135/pvutils@1.1.3/denonext/pvutils.mjs": "ad156a239ec0f1aa99f123fab44abc292c87d4fd6969d7af264436630457523c",
     "https://esm.sh/v135/tslib@2.6.2/denonext/tslib.mjs": "29782bcd3139f77ec063dc5a9385c0fff4a8d0a23b6765c73d9edeb169a04bf1"
-  },
-  "workspace": {
-    "dependencies": [
-      "npm:@types/jsonwebtoken",
-      "npm:express@4",
-      "npm:jsonwebtoken@9.0.2"
-    ]
   }
 }
