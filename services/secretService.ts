@@ -1,30 +1,10 @@
-import { FromBerResult, fromBER } from "asn1js";
+import { fromBER, type FromBerResult } from "asn1js";
 import { privateKey } from "../config.ts";
 import {
   arrayBufferToBase64,
   arrayBufferToBase64Url,
   base64ToArrayBuffer,
 } from "../utils/base64.ts";
-
-const encryptAlgorithm = {
-  name: "RSA-OAEP",
-  modulusLength: 2048,
-  publicExponent: new Uint8Array([1, 0, 1]),
-  extractable: true,
-  hash: {
-    name: "SHA-256",
-  },
-};
-
-// const signAlgorithm = {
-//   name: "RSASSA-PKCS1-v1_5",
-//   hash: {
-//     name: "SHA-256",
-//   },
-//   modulusLength: 2048,
-//   extractable: false,
-//   publicExponent: new Uint8Array([1, 0, 1]),
-// };
 
 const rsaOaepAlg = { name: "RSA-OAEP", hash: "SHA-256" };
 
@@ -55,16 +35,16 @@ function convertBinaryToPem(privateKey: ArrayBuffer, label: string, del = "") {
   return convertBase64ToPem(b64, label, del);
 }
 
-export function generateKey(
-  alg: RsaHashedKeyGenParams | EcKeyGenParams,
-  scope: KeyUsage[]
-) {
-  return crypto.subtle.generateKey(alg, true, scope);
-}
+// export function generateKey(
+//   alg: RsaHashedKeyGenParams | EcKeyGenParams,
+//   scope: KeyUsage[]
+// ) {
+//   return crypto.subtle.generateKey(alg, true, scope);
+// }
 
-export function generateSigningKey() {
-  return generateKey(encryptAlgorithm, ["encrypt", "decrypt"]);
-}
+// export function generateSigningKey() {
+//   return generateKey(signAlgorithm, ["sign", "verify"]);
+// }
 
 export function importPrivateKey(pemKey: string): Promise<CryptoKey> {
   const privateKeyBinary = base64ToArrayBuffer(pemKey);
