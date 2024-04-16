@@ -34,7 +34,7 @@ export async function getAuthInfo(req: Request, res: Response) {
     }
   }
 
-  res.json({ ...authInfo, token: encryptedToken });
+  res.json({ ...authInfo, token, encryptedToken });
 }
 
 export async function getAuthenticationScopeToken(req: Request, res: Response) {
