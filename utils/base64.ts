@@ -9,7 +9,7 @@ export function base64UrlToBase64(s: string) {
   return base64.padEnd(length, "=");
 }
 
-export function arrayBufferToBase64(arrayBuffer: ArrayBuffer) {
+export function bytesToBase64(arrayBuffer: ArrayBuffer) {
   const bytes = new Uint8Array(arrayBuffer);
   const chars: string[] = new Array(bytes.length);
 
@@ -20,12 +20,12 @@ export function arrayBufferToBase64(arrayBuffer: ArrayBuffer) {
   return btoa(chars.join(""));
 }
 
-export function arrayBufferToBase64Url(arrayBuffer: ArrayBuffer) {
-  const base64 = arrayBufferToBase64(arrayBuffer);
+export function bytesToBase64Url(arrayBuffer: ArrayBuffer) {
+  const base64 = bytesToBase64(arrayBuffer);
   return base64toBase64Url(base64);
 }
 
-export function base64ToArrayBuffer(base64String: string) {
+export function base64ToBytes(base64String: string): Uint8Array {
   const codes: number[] = atob(base64String)
     .split("")
     .map((char) => char.charCodeAt(0));
@@ -36,10 +36,10 @@ export function base64ToArrayBuffer(base64String: string) {
     bytes[i] = codes[i];
   }
 
-  return bytes.buffer;
+  return bytes;
 }
 
-export function base64UrlToArrayBuffer(base64UrlString: string) {
+export function base64UrlToBytes(base64UrlString: string) {
   const base64 = base64UrlToBase64(base64UrlString);
-  return base64ToArrayBuffer(base64);
+  return base64ToBytes(base64);
 }

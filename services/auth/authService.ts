@@ -31,7 +31,7 @@ import jwt from "jsonwebtoken";
 import { SignOptions, JwtPayload } from "jsonwebtoken";
 import { getUserById } from "../user/userService.ts";
 import { getPrivateKey } from "../secretService.ts";
-import { arrayBufferToBase64Url } from "../../utils/base64.ts";
+import { bytesToBase64Url, base64UrlToBytes } from "../../utils/base64.ts";
 
 const db = getDatabase();
 
@@ -59,7 +59,33 @@ export async function getCredentials(id: string): Promise<Credentials | null> {
 export async function getAuthenticator(
   id: string
 ): Promise<Authenticator | null> {
-  return (await db.get<Authenticator>([authenticatorsPrefix, id])).value;
+  const authenticatorEntry = await db.get<Authenticator<string>>([
+    authenticatorsPrefix,
+    id,
+  ]);
+
+  if (authenticatorEntry.value) {
+    const {
+      credentialID,
+      credentialPublicKey,
+      credentialType,
+      credentialDeviceType,
+      counter,
+      credentialBackedUp,
+      transports,
+    } = authenticatorEntry.value;
+    return {
+      credentialID: base64UrlToBytes(credentialID),
+      credentialPublicKey: base64UrlToBytes(credentialPublicKey),
+      credentialType,
+      credentialDeviceType,
+      counter,
+      credentialBackedUp,
+      transports,
+    };
+  }
+
+  return null;
 }
 
 export async function generateCredentials(
@@ -243,12 +269,12 @@ export async function createNewAuthenticator(
     );
   }
 
-  const authenticatorId: string = arrayBufferToBase64Url(credentialID);
+  const authenticatorId: string = bytesToBase64Url(credentialID);
 
-  const newAuthenticator: Authenticator = {
-    credentialID,
+  const newAuthenticator: Authenticator<string> = {
+    credentialID: authenticatorId,
     credentialType,
-    credentialPublicKey,
+    credentialPublicKey: bytesToBase64Url(credentialPublicKey),
     counter,
     credentialBackedUp,
     transports,

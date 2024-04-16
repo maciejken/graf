@@ -1,9 +1,9 @@
 import { fromBER, type FromBerResult } from "asn1js";
 import { privateKey } from "../config.ts";
 import {
-  arrayBufferToBase64,
-  arrayBufferToBase64Url,
-  base64ToArrayBuffer,
+  bytesToBase64,
+  bytesToBase64Url,
+  base64ToBytes,
 } from "../utils/base64.ts";
 
 const rsaOaepAlg = { name: "RSA-OAEP", hash: "SHA-256" };
@@ -31,7 +31,7 @@ export function convertBase64ToPem(line: string, label: string, del = "\n") {
 
 function convertBinaryToPem(privateKey: ArrayBuffer, label: string, del = "") {
   const bytes = new Uint8Array(privateKey);
-  const b64 = arrayBufferToBase64(bytes);
+  const b64 = bytesToBase64(bytes);
   return convertBase64ToPem(b64, label, del);
 }
 
@@ -47,7 +47,7 @@ function convertBinaryToPem(privateKey: ArrayBuffer, label: string, del = "") {
 // }
 
 export function importPrivateKey(pemKey: string): Promise<CryptoKey> {
-  const privateKeyBinary = base64ToArrayBuffer(pemKey);
+  const privateKeyBinary = base64ToBytes(pemKey);
   const privateKeySequence = fromBER(privateKeyBinary);
   const [
     _version,
@@ -66,14 +66,14 @@ export function importPrivateKey(pemKey: string): Promise<CryptoKey> {
     "jwk",
     {
       kty: "RSA",
-      n: arrayBufferToBase64Url(modulus.valueBlock.valueHex),
-      e: arrayBufferToBase64Url(publicExponent.valueBlock.valueHex),
-      d: arrayBufferToBase64Url(privateExponent.valueBlock.valueHex),
-      p: arrayBufferToBase64Url(prime1.valueBlock.valueHex),
-      q: arrayBufferToBase64Url(prime2.valueBlock.valueHex),
-      dp: arrayBufferToBase64Url(exponent1.valueBlock.valueHex),
-      dq: arrayBufferToBase64Url(exponent2.valueBlock.valueHex),
-      qi: arrayBufferToBase64Url(coefficient.valueBlock.valueHex),
+      n: bytesToBase64Url(modulus.valueBlock.valueHex),
+      e: bytesToBase64Url(publicExponent.valueBlock.valueHex),
+      d: bytesToBase64Url(privateExponent.valueBlock.valueHex),
+      p: bytesToBase64Url(prime1.valueBlock.valueHex),
+      q: bytesToBase64Url(prime2.valueBlock.valueHex),
+      dp: bytesToBase64Url(exponent1.valueBlock.valueHex),
+      dq: bytesToBase64Url(exponent2.valueBlock.valueHex),
+      qi: bytesToBase64Url(coefficient.valueBlock.valueHex),
     },
     rsaOaepAlg,
     false,
@@ -87,7 +87,7 @@ export async function exportPrivateKey(privateKey: CryptoKey) {
 }
 
 export function importPublicKey(pemKey: string): Promise<CryptoKey> {
-  const publicKeyBinary = base64ToArrayBuffer(pemKey);
+  const publicKeyBinary = base64ToBytes(pemKey);
   const publicKeySequence: FromBerResult = fromBER(publicKeyBinary);
   const modulus =
     // @ts-ignore result.valueBlock.value exists!
@@ -100,8 +100,8 @@ export function importPublicKey(pemKey: string): Promise<CryptoKey> {
     "jwk",
     {
       kty: "RSA",
-      e: arrayBufferToBase64Url(exponent),
-      n: arrayBufferToBase64Url(modulus),
+      e: bytesToBase64Url(exponent),
+      n: bytesToBase64Url(modulus),
     },
     rsaOaepAlg,
     false,
@@ -127,7 +127,7 @@ export function encryptData(data: string, key: CryptoKey) {
 export async function encrypt(data: string, publicKey: string) {
   const publicKeyBuffer = await importPublicKey(publicKey);
   const encryptedDataBuffer = await encryptData(data, publicKeyBuffer);
-  return arrayBufferToBase64(encryptedDataBuffer);
+  return bytesToBase64(encryptedDataBuffer);
 }
 
 function decryptData(data: ArrayBuffer, key: CryptoKey): Promise<ArrayBuffer> {
@@ -142,13 +142,13 @@ function decryptData(data: ArrayBuffer, key: CryptoKey): Promise<ArrayBuffer> {
 }
 
 export async function decrypt(data: string, privateKey: string) {
-  const dataBuffer: ArrayBuffer = base64ToArrayBuffer(data);
+  const dataBuffer: ArrayBuffer = base64ToBytes(data);
   const privateKeyBuffer: CryptoKey = await importPrivateKey(privateKey);
   const decryptedBuffer: ArrayBuffer = await decryptData(
     dataBuffer,
     privateKeyBuffer
   );
-  const decryptedBase64: string = arrayBufferToBase64(decryptedBuffer);
+  const decryptedBase64: string = bytesToBase64(decryptedBuffer);
   return decodeURIComponent(atob(decryptedBase64));
 }
 
