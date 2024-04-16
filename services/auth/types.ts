@@ -22,9 +22,9 @@ export enum AuthScope {
   Generic = "generic",
 }
 
-export interface Authenticator {
-  credentialID: Uint8Array;
-  credentialPublicKey: Uint8Array;
+export interface Authenticator<T = Uint8Array> {
+  credentialID: T;
+  credentialPublicKey: T;
   credentialType: "public-key";
   credentialDeviceType: CredentialDeviceType;
   counter: number;
